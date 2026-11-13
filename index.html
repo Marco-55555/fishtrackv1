@@ -25,15 +25,15 @@
                 <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-indigo-400">
                     🐟 Fish, Biomes & Crafting Tracker
                 </h1>
-                <p class="text-slate-400 text-sm mt-1">Track inventory across biomes, items, baits & money with auto-correcting search.</p>
+                <p class="text-slate-400 text-sm mt-1">Track inventory across biomes, items, baits & fish sell values.</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
                 <div class="bg-slate-950 border border-amber-500/30 px-3.5 py-2 rounded-xl flex items-center gap-2">
                     <span class="text-amber-400 text-sm">🪙</span>
                     <div>
-                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Money</div>
-                        <div id="headerMoneyDisplay" class="text-sm font-bold text-amber-300 cursor-pointer hover:underline" onclick="promptEditMoney()">$0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold" title="Total Fish Sell Value">Fish Value ($)</div>
+                        <div id="headerMoneyDisplay" class="text-sm font-bold text-amber-300 cursor-pointer hover:underline" onclick="promptEditMoney()" title="Click to override / adjust">$0</div>
                     </div>
                 </div>
 
@@ -72,7 +72,7 @@
                             <label for="fishNameInput" class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Type Item Name (Auto-Corrects)</label>
                             <div class="relative">
                                 <input type="text" id="fishNameInput" list="itemsDatalist" required
-                                    placeholder="e.g. anoma, coral, salmon..."
+                                    placeholder="e.g. coral, salmon, megalodon..."
                                     autocomplete="off" enterkeyhint="next"
                                     class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
                                 <button type="button" onclick="clearField('fishNameInput')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200">✕</button>
@@ -136,31 +136,38 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
                     <div onclick="setFilter('Legendary')" class="bg-slate-950/80 border border-amber-400/30 hover:border-amber-400/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
                         <div class="text-[10px] uppercase tracking-wider text-amber-300 font-semibold truncate">🟡 Legendary</div>
-                        <div id="count-Legendary" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                        <div id="count-Legendary" class="text-xs font-bold text-slate-100 mt-1">0 pcs</div>
+                        <div id="val-Legendary" class="text-[11px] text-amber-300 font-medium">$0</div>
                     </div>
                     <div onclick="setFilter('Rare')" class="bg-slate-950/80 border border-blue-500/30 hover:border-blue-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
                         <div class="text-[10px] uppercase tracking-wider text-blue-300 font-semibold truncate">🔵 Rare</div>
-                        <div id="count-Rare" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                        <div id="count-Rare" class="text-xs font-bold text-slate-100 mt-1">0 pcs</div>
+                        <div id="val-Rare" class="text-[11px] text-blue-300 font-medium">$0</div>
                     </div>
                     <div onclick="setFilter('Uncommon')" class="bg-slate-950/80 border border-emerald-500/30 hover:border-emerald-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
                         <div class="text-[10px] uppercase tracking-wider text-emerald-300 font-semibold truncate">🟢 Uncommon</div>
-                        <div id="count-Uncommon" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                        <div id="count-Uncommon" class="text-xs font-bold text-slate-100 mt-1">0 pcs</div>
+                        <div id="val-Uncommon" class="text-[11px] text-emerald-300 font-medium">$0</div>
                     </div>
                     <div onclick="setFilter('Common')" class="bg-slate-950/80 border border-slate-600/30 hover:border-slate-500 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
                         <div class="text-[10px] uppercase tracking-wider text-slate-300 font-semibold truncate">⚪ Common</div>
-                        <div id="count-Common" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                        <div id="count-Common" class="text-xs font-bold text-slate-100 mt-1">0 pcs</div>
+                        <div id="val-Common" class="text-[11px] text-slate-300 font-medium">$0</div>
                     </div>
                     <div onclick="setFilter('bait')" class="bg-slate-950/80 border border-amber-500/30 hover:border-amber-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
                         <div class="text-[10px] uppercase tracking-wider text-amber-400 font-semibold truncate">🪱 Bait</div>
-                        <div id="count-bait" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                        <div id="count-bait" class="text-xs font-bold text-slate-100 mt-1">0 pcs</div>
+                        <div id="val-bait" class="text-[11px] text-amber-300 font-medium">—</div>
                     </div>
                     <div onclick="setFilter('item')" class="bg-slate-950/80 border border-sky-500/30 hover:border-sky-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
                         <div class="text-[10px] uppercase tracking-wider text-sky-300 font-semibold truncate">📦 Items</div>
-                        <div id="count-item" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                        <div id="count-item" class="text-xs font-bold text-slate-100 mt-1">0 pcs</div>
+                        <div id="val-item" class="text-[11px] text-sky-300 font-medium">—</div>
                     </div>
                     <div onclick="setFilter('gear')" class="bg-slate-950/80 border border-purple-500/30 hover:border-purple-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm col-span-2 sm:col-span-1">
                         <div class="text-[10px] uppercase tracking-wider text-purple-300 font-semibold truncate">🎣 Gear</div>
-                        <div id="count-gear" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                        <div id="count-gear" class="text-xs font-bold text-slate-100 mt-1">0 pcs</div>
+                        <div id="val-gear" class="text-[11px] text-purple-300 font-medium">—</div>
                     </div>
                 </div>
 
@@ -283,6 +290,20 @@
 
         const RARITY_RANK = { "Legendary": 4, "Rare": 3, "Uncommon": 2, "Common": 1, "Other": 0 };
 
+        function getFishSellPrice(name, rarity) {
+            if (rarity === 'Legendary') return 25000;
+            if (rarity === 'Rare') return 3000;
+            if (rarity === 'Uncommon') return 1000;
+            if (rarity === 'Common') {
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) {
+                    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                return 500 + (Math.abs(hash) % 151);
+            }
+            return 0;
+        }
+
         const DEFAULT_RECIPES = {
             "Fishing Gear Crate": { ingredients: {"Coral": 15, "Seaweed": 15, "Rusty Anchor": 10, "Clay Jar": 5, "Cryptic Stone Tablet": 5}, output: "Fishing Gear Crate x1" },
             "Submarine": { ingredients: {"Overgrown Lantern": 15, "Pristine Pearl Trinket": 15, "Brass Astrolabe": 10, "Brass Spyglass": 10, "Submarine Scrap": 5}, output: "Submarine x1" },
@@ -316,7 +337,6 @@
             Object.values(biomeData.rarities).flat().forEach(registerKnownName);
         }
 
-        // Strict Auto-Correct: Finds best match if user types prefix or typo (e.g. "anoma" -> "Anomalocaris")
         function resolveCanonicalName(rawInput) {
             const trimmed = rawInput.trim();
             if (!trimmed) return '';
@@ -324,10 +344,8 @@
             if (lower === 'money') return 'Money';
             if (lower === 'any fish') return 'Any Fish';
             if (CANONICAL_NAME_MAP[lower]) return CANONICAL_NAME_MAP[lower];
-
-            // Partial match / Auto-correct check
             const match = ALL_KNOWN_NAMES.find(name => name.toLowerCase().startsWith(lower) || name.toLowerCase().includes(lower));
-            return match || null; // Return null if not a valid game item (No custom items allowed)
+            return match || null;
         }
 
         function getItemDetails(name) {
@@ -366,7 +384,7 @@
             inventory[name] = { count: count, type: type, rarity: details.rarity, biomes: details.biomes };
         }
 
-        let playerMoney = parseInt(localStorage.getItem('fish_tracker_money')) || 0;
+        let manualMoneyOverride = localStorage.getItem('fish_tracker_money_override') !== null ? parseInt(localStorage.getItem('fish_tracker_money_override')) : null;
         let recipes = JSON.parse(localStorage.getItem('fish_tracker_recipes')) || DEFAULT_RECIPES;
         
         let tempRecipeIngredients = {};
@@ -408,20 +426,38 @@
             activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-lg');
         }
 
+        function calculateTotalFishValue() {
+            if (manualMoneyOverride !== null) return manualMoneyOverride;
+            let total = 0;
+            for (const [name, data] of Object.entries(inventory)) {
+                if (data.type === 'Fish') {
+                    total += getFishSellPrice(name, data.rarity) * data.count;
+                }
+            }
+            return total;
+        }
+
         function saveData() {
             localStorage.setItem('fish_tracker_inventory', JSON.stringify(inventory));
             localStorage.setItem('fish_tracker_recipes', JSON.stringify(recipes));
-            localStorage.setItem('fish_tracker_money', playerMoney);
+            if (manualMoneyOverride !== null) {
+                localStorage.setItem('fish_tracker_money_override', manualMoneyOverride);
+            } else {
+                localStorage.removeItem('fish_tracker_money_override');
+            }
             if (focusedRecipeName) localStorage.setItem('fish_tracker_focused_recipe', focusedRecipeName);
             else localStorage.removeItem('fish_tracker_focused_recipe');
             renderApp();
         }
 
-        function focusRecipe(recipeName, autoJumpToInventory = true) {
-            focusedRecipeName = (focusedRecipeName === recipeName && !autoJumpToInventory) ? null : recipeName;
-            showOnlyFocusedRecipeItems = false;
-            saveData();
-            if (autoJumpToInventory && focusedRecipeName) switchTab('tab-inventory');
+        function toggleFocusRecipe(recipeName) {
+            if (focusedRecipeName === recipeName) {
+                clearFocusedRecipe();
+            } else {
+                focusedRecipeName = recipeName;
+                showOnlyFocusedRecipeItems = false;
+                saveData();
+            }
         }
 
         function clearFocusedRecipe() {
@@ -438,14 +474,29 @@
         }
 
         function promptEditMoney() {
-            const newMoney = prompt("Enter Money balance:", playerMoney);
-            if (newMoney !== null && !isNaN(newMoney)) { playerMoney = parseInt(newMoney); saveData(); }
+            const currentTotal = calculateTotalFishValue();
+            const newMoney = prompt("Override total fish sell value (Enter nothing to revert to automatic calculation):", currentTotal);
+            if (newMoney === "") {
+                manualMoneyOverride = null;
+            } else if (newMoney !== null && !isNaN(newMoney)) {
+                manualMoneyOverride = parseInt(newMoney);
+            }
+            saveData();
         }
 
         function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ inventory, recipes, money: playerMoney }, null, 2));
-            const a = document.createElement('a'); a.href = dataStr; a.download = "fish_tracker_backup.json";
-            document.body.appendChild(a); a.click(); a.remove();
+            const dataToExport = {
+                inventory: inventory,
+                recipes: recipes,
+                manualMoneyOverride: manualMoneyOverride
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "fish_biomes_tracker_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
 
         function triggerImport() { document.getElementById('importFileInput').click(); }
@@ -458,10 +509,15 @@
                 try {
                     const parsed = JSON.parse(e.target.result);
                     if (parsed.inventory && parsed.recipes) {
-                        inventory = parsed.inventory; recipes = parsed.recipes; playerMoney = parsed.money || 0;
-                        saveData(); alert("✅ Imported successfully!");
-                    } else { alert("❌ Invalid format."); }
-                } catch (err) { alert("❌ Error: " + err.message); }
+                        inventory = parsed.inventory;
+                        recipes = parsed.recipes;
+                        manualMoneyOverride = parsed.manualMoneyOverride !== undefined ? parsed.manualMoneyOverride : null;
+                        saveData();
+                        alert("✅ Successfully imported data!");
+                    } else {
+                        alert("❌ Invalid backup file format.");
+                    }
+                } catch (err) { alert("❌ Error parsing JSON file: " + err.message); }
                 event.target.value = '';
             };
             reader.readAsText(file);
@@ -562,31 +618,39 @@
             renderBuilderIngredients(); saveData(); switchTab('tab-crafts');
         }
 
-        function deleteRecipe(recipeName) {
-            if (confirm(`Delete recipe "${recipeName}"?`)) {
-                if (focusedRecipeName === recipeName) clearFocusedRecipe();
-                delete recipes[recipeName]; saveData();
-            }
-        }
-
         function resetAllData() {
             if (confirm("Reset all data to default?")) {
-                inventory = {}; recipes = {...DEFAULT_RECIPES}; playerMoney = 0; clearFocusedRecipe();
+                inventory = {}; recipes = {...DEFAULT_RECIPES}; manualMoneyOverride = null; clearFocusedRecipe();
                 localStorage.clear(); renderApp();
             }
         }
 
         function updateRarityCounters() {
             const counts = { "Legendary": 0, "Rare": 0, "Uncommon": 0, "Common": 0, "bait": 0, "item": 0, "gear": 0 };
-            for (const [_, data] of Object.entries(inventory)) {
+            const values = { "Legendary": 0, "Rare": 0, "Uncommon": 0, "Common": 0 };
+
+            for (const [name, data] of Object.entries(inventory)) {
                 if (data.type === 'Bait') counts.bait += data.count;
                 else if (data.type === 'Gear') counts.gear += data.count;
                 else if (data.type === 'Item') counts.item += data.count;
-                else if (counts[data.rarity] !== undefined) counts[data.rarity] += data.count;
+                else if (counts[data.rarity] !== undefined) {
+                    counts[data.rarity] += data.count;
+                    values[data.rarity] += getFishSellPrice(name, data.rarity) * data.count;
+                }
             }
+
             for (const [key, val] of Object.entries(counts)) {
-                const el = document.getElementById('count-' + key);
-                if (el) el.innerText = val.toLocaleString();
+                const countEl = document.getElementById('count-' + key);
+                if (countEl) countEl.innerText = `${val.toLocaleString()} pcs`;
+
+                const valEl = document.getElementById('val-' + key);
+                if (valEl) {
+                    if (values[key] !== undefined) {
+                        valEl.innerText = `$${values[key].toLocaleString()}`;
+                    } else {
+                        valEl.innerText = `—`;
+                    }
+                }
             }
         }
 
@@ -607,7 +671,7 @@
                         <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-800">
                 `;
                 for (const [ing, reqQty] of Object.entries(recipe.ingredients)) {
-                    const haveQty = ing === 'Money' ? playerMoney : (ing.toLowerCase() === 'any fish' ? totalFishCount : (inventory[ing] ? inventory[ing].count : 0));
+                    const haveQty = ing === 'Money' ? calculateTotalFishValue() : (ing.toLowerCase() === 'any fish' ? totalFishCount : (inventory[ing] ? inventory[ing].count : 0));
                     const hasEnough = haveQty >= reqQty;
                     pillsHtml += `<button onclick="quickFilterItem('${ing.replace(/'/g, "\\'")}')" class="text-[11px] px-2.5 py-1 rounded-lg border ${hasEnough ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/15 border-rose-500/30 text-rose-300'}">${hasEnough ? '✅' : '❌'} ${ing} (${haveQty}/${reqQty})</button>`;
                 }
@@ -616,7 +680,8 @@
         }
 
         function renderInventory() {
-            document.getElementById('headerMoneyDisplay').innerText = `$${playerMoney.toLocaleString()}`;
+            const totalVal = calculateTotalFishValue();
+            document.getElementById('headerMoneyDisplay').innerText = `$${totalVal.toLocaleString()}`;
             updateRarityCounters();
             renderQuickFilters();
 
@@ -657,25 +722,33 @@
                 return;
             }
 
-            container.innerHTML = entries.map(([name, data]) => `
-                <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl">
-                    <div>
-                        <div class="font-medium text-slate-200 text-sm">${name}</div>
-                        <div class="text-[11px] text-slate-400 mt-0.5">🌊 ${data.biomes.join(', ') || 'Various'}</div>
-                        <div class="text-xs text-indigo-300 font-semibold mt-1">Qty: ${data.count}</div>
+            container.innerHTML = entries.map(([name, data]) => {
+                const unitPrice = data.type === 'Fish' ? getFishSellPrice(name, data.rarity) : 0;
+                const totalItemVal = unitPrice * data.count;
+                return `
+                    <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl">
+                        <div>
+                            <div class="font-medium text-slate-200 text-sm">${name}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">🌊 ${data.biomes.join(', ') || 'Various'}</div>
+                            <div class="text-xs text-indigo-300 font-semibold mt-1 flex items-center gap-2">
+                                <span>Qty: ${data.count}</span>
+                                ${data.type === 'Fish' ? `<span class="text-amber-300 font-normal">($${totalItemVal.toLocaleString()} total)</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', 1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300">+</button>
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', -1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300">-</button>
+                            <button onclick="removeFishItem('${name.replace(/'/g, "\\'")}')" class="w-8 h-8 bg-rose-500/10 text-rose-400 rounded-xl">🗑️</button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', 1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300">+</button>
-                        <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', -1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300">-</button>
-                        <button onclick="removeFishItem('${name.replace(/'/g, "\\'")}')" class="w-8 h-8 bg-rose-500/10 text-rose-400 rounded-xl">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function renderCrafting() {
             const container = document.getElementById('craftingList');
             const totalFish = Object.values(inventory).filter(d => d.type === 'Fish').reduce((a, b) => a + b.count, 0);
+            const totalVal = calculateTotalFishValue();
             
             container.innerHTML = Object.entries(recipes).map(([recipeName, details]) => {
                 let canCraft = Infinity;
@@ -683,9 +756,13 @@
                 let ingHtml = '';
 
                 for (const [ing, req] of Object.entries(details.ingredients)) {
-                    const have = ing === 'Money' ? playerMoney : (ing.toLowerCase() === 'any fish' ? totalFish : (inventory[ing] ? inventory[ing].count : 0));
+                    let have = 0;
+                    if (ing === 'Money') have = totalVal;
+                    else if (ing.toLowerCase() === 'any fish') have = totalFish;
+                    else have = inventory[ing] ? inventory[ing].count : 0;
+
                     canCraft = Math.min(canCraft, Math.floor(have / req));
-                    ingHtml += `<div class="flex justify-between text-sm py-1 border-b border-slate-800 last:border-0"><span class="text-slate-300">${have >= req ? '✅' : '❌'} ${ing}</span><span class="${have >= req ? 'text-emerald-400' : 'text-rose-400'}">${have} / ${req}</span></div>`;
+                    ingHtml += `<div class="flex justify-between text-sm py-1 border-b border-slate-800 last:border-0"><span class="text-slate-300">${have >= req ? '✅' : '❌'} ${ing === 'Money' ? 'Money (Sell Value)' : ing}</span><span class="${have >= req ? 'text-emerald-400' : 'text-rose-400'}">${ing === 'Money' ? '$' + have.toLocaleString() + ' / $' + req.toLocaleString() : have + ' / ' + req}</span></div>`;
                 }
 
                 if (canCraft === Infinity || isNaN(canCraft)) canCraft = 0;
@@ -694,9 +771,8 @@
                     <div class="border ${isFocused ? 'border-indigo-500 bg-indigo-950/15' : 'border-slate-800 bg-slate-950/60'} p-4 rounded-2xl space-y-3">
                         <div class="flex justify-between items-start">
                             <div><h3 class="font-semibold text-slate-100">${recipeName}</h3><p class="text-xs text-indigo-300">Yields: ${details.output}</p></div>
-                            <div class="flex gap-1.5">
-                                <button onclick="focusRecipe('${recipeName.replace(/'/g, "\\'")}')" class="text-xs px-2.5 py-1 rounded-full font-semibold ${isFocused ? 'bg-indigo-600 text-white' : 'bg-indigo-500/20 text-indigo-300'}">🎯 ${isFocused ? 'Focused' : 'Focus'}</button>
-                                <button onclick="deleteRecipe('${recipeName.replace(/'/g, "\\'")}')" class="text-xs text-rose-400 bg-rose-500/10 px-2 py-1 rounded-lg">🗑️</button>
+                            <div>
+                                <button onclick="toggleFocusRecipe('${recipeName.replace(/'/g, "\\'")}')" class="text-xs px-3 py-1.5 rounded-full font-semibold ${isFocused ? 'bg-indigo-600 text-white' : 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300'}">🎯 ${isFocused ? 'Focused' : 'Focus'}</button>
                             </div>
                         </div>
                         <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">${ingHtml}</div>

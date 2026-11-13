@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish & Crafting Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .highlight { background-color: rgba(99, 102, 241, 0.3); color: #c7d2fe; border-radius: 3px; padding: 0 2px; }
+        /* Custom subtle scrollbar for the sort bar */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(71, 85, 105, 0.7);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        <!-- Header -->
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-800 gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-indigo-400">
+                    🐟 Fish, Biomes & Crafting Tracker
+                </h1>
+                <p class="text-slate-400 text-sm mt-1">Track inventory across biomes, items, baits & money, with search highlights and craft focusing.</p>
+            </div>
+            
+            <!-- Header Right: Money & Actions -->
+            <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+                <div class="bg-slate-950 border border-amber-500/30 px-3.5 py-2 rounded-xl flex items-center gap-2">
+                    <span class="text-amber-400 text-sm">🪙</span>
+                    <div>
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Money</div>
+                        <div id="headerMoneyDisplay" class="text-sm font-bold text-amber-300 cursor-pointer hover:underline" onclick="promptEditMoney()">$0</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="exportData()" class="text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 px-3 py-2 rounded-lg border border-indigo-500/30 transition flex items-center gap-1 font-medium">
+                        💾 Export
+                    </button>
+                    <button onclick="triggerImport()" class="text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-3 py-2 rounded-lg border border-emerald-500/30 transition flex items-center gap-1 font-medium">
+                        📂 Import
+                    </button>
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importData(event)">
+                    <button onclick="resetAllData()" class="text-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 px-3 py-2 rounded-lg border border-rose-500/30 transition font-medium">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="grid grid-cols-3 gap-2 bg-slate-900 p-2 rounded-2xl border border-slate-800 shadow-lg">
+            <button id="btn-tab-add" onclick="switchTab('tab-add')" class="tab-btn py-3 px-4 rounded-xl font-medium text-sm transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-lg">
+                <span>➕</span> Add / Craft
+            </button>
+            <button id="btn-tab-inventory" onclick="switchTab('tab-inventory')" class="tab-btn py-3 px-4 rounded-xl font-medium text-sm transition flex items-center justify-center gap-2 bg-slate-900 text-slate-300 hover:bg-slate-800">
+                <span>🎒</span> Inventory <span id="navInventoryCount" class="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full text-xs">0</span>
+            </button>
+            <button id="btn-tab-crafts" onclick="switchTab('tab-crafts')" class="tab-btn py-3 px-4 rounded-xl font-medium text-sm transition flex items-center justify-center gap-2 bg-slate-900 text-slate-300 hover:bg-slate-800">
+                <span>📦</span> Recipes & Status
+            </button>
+        </nav>
+
+        <!-- TAB 1: ADD FISH / ITEMS -->
+        <div id="tab-add" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Add / Quick Update Form -->
+                <div class="bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-800 space-y-4">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-indigo-400">
+                        🐟 Add / Set Item Quantity
+                    </h2>
+                    <form id="fishForm" onsubmit="handleFishSubmit(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Select Fish / Bait / Item / Gear</label>
+                            <select id="fishSelectInput" onchange="handleFishSelectionChange(event)"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        
+                        <div id="customNameContainer" class="hidden">
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Custom Item Name</label>
+                            <input type="text" id="customFishNameInput" placeholder="e.g. Special Item" 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Total Quantity</label>
+                            <input type="number" id="fishQtyInput" value="1" min="0" required 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
+                            Save to Inventory
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Custom Recipe Creator Form -->
+                <div class="bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-800 space-y-4">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-purple-400">
+                        🛠️ Create Custom Recipe
+                    </h2>
+                    <form id="recipeForm" onsubmit="handleRecipeSubmit(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Craft / Recipe Name</label>
+                            <input type="text" id="recipeNameInput" required placeholder="e.g. Super Rod" 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Yield / Output Description</label>
+                            <input type="text" id="recipeOutputInput" required placeholder="e.g. Super Rod x1" 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition">
+                        </div>
+
+                        <!-- Ingredients Builder -->
+                        <div class="space-y-2 pt-2 border-t border-slate-800">
+                            <label class="block text-xs uppercase tracking-wider text-slate-400">Required Ingredients</label>
+                            <div class="flex gap-2">
+                                <select id="ingSelectInput" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500">
+                                    <!-- Populated dynamically -->
+                                </select>
+                                <input type="number" id="ingQtyInput" value="1" min="1" placeholder="Qty" 
+                                    class="w-20 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-purple-500">
+                                <button type="button" onclick="addIngredientToBuilder()" class="bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl text-sm font-bold transition">Add</button>
+                            </div>
+                            <div id="builderIngredientsList" class="space-y-1.5 pt-1 max-h-32 overflow-y-auto">
+                                <p class="text-xs text-slate-500 italic">No ingredients added yet.</p>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-purple-600/20 mt-2">
+                            Save Custom Recipe
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: VIEW INVENTORY -->
+        <div id="tab-inventory" class="tab-content space-y-6 hidden">
+            <div class="bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-800 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-indigo-400">
+                        🎒 Inventory Management
+                    </h2>
+                    <span id="totalFishBadge" class="text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-300">0 Total Items</span>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input type="text" id="inventorySearchInput" placeholder="Type to search items, fish, baits, biomes..." oninput="handleSearchInput(event)"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    <button onclick="clearSearch()" id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 hidden">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Horizontal Scrollable Sort Bar -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2">
+                        <span class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold shrink-0 mr-1">Sort By:</span>
+                        <button onclick="setSort('name-asc')" id="sort-btn-name-asc" class="sort-btn shrink-0 text-xs px-3 py-1.5 rounded-xl font-medium bg-indigo-600 text-white transition shadow">🔤 Name (A → Z)</button>
+                        <button onclick="setSort('name-desc')" id="sort-btn-name-desc" class="sort-btn shrink-0 text-xs px-3 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800 transition">🔤 Name (Z → A)</button>
+                        <button onclick="setSort('qty-desc')" id="sort-btn-qty-desc" class="sort-btn shrink-0 text-xs px-3 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800 transition">🔢 Qty (High → Low)</button>
+                        <button onclick="setSort('qty-asc')" id="sort-btn-qty-asc" class="sort-btn shrink-0 text-xs px-3 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800 transition">🔢 Qty (Low → High)</button>
+                        <button onclick="setSort('rarity')" id="sort-btn-rarity" class="sort-btn shrink-0 text-xs px-3 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800 transition">✨ Rarity (Legendary → Common)</button>
+                        <button onclick="setSort('biome')" id="sort-btn-biome" class="sort-btn shrink-0 text-xs px-3 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800 transition">🌊 Biome</button>
+                    </div>
+                </div>
+
+                <!-- Filter Category Pills -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="setFilter('all')" id="filter-btn-all" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-indigo-600 text-white transition shadow">All Items</button>
+                    <button onclick="setFilter('fish')" id="filter-btn-fish" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🐟 Fish Only</button>
+                    <button onclick="setFilter('bait')" id="filter-btn-bait" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🪱 Bait Only</button>
+                    <button onclick="setFilter('item')" id="filter-btn-item" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">📦 Items</button>
+                    <button onclick="setFilter('gear')" id="filter-btn-gear" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🎣 Gear & Rewards</button>
+                    <button onclick="setFilter('Common')" id="filter-btn-Common" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">⚪ Common</button>
+                    <button onclick="setFilter('Uncommon')" id="filter-btn-Uncommon" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🟢 Uncommon</button>
+                    <button onclick="setFilter('Rare')" id="filter-btn-Rare" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🔵 Rare</button>
+                    <button onclick="setFilter('Legendary')" id="filter-btn-Legendary" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🟡 Legendary</button>
+                </div>
+
+                <!-- Focused Recipe Ingredients Bar (Appears when you focus a craft) -->
+                <div id="quickFilterContainer"></div>
+
+                <!-- Inventory Grid List -->
+                <div id="inventoryList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: CRAFT STATUS -->
+        <div id="tab-crafts" class="tab-content space-y-6 hidden">
+            <div class="bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-800 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-lg font-semibold flex items-center gap-2 text-emerald-400">
+                            📦 Crafting Requirements, Biomes & Status
+                        </h2>
+                        <p class="text-xs text-slate-400">Click <span class="text-indigo-300 font-medium">🎯 Focus</span> on any recipe to filter & track its ingredients in your Inventory.</p>
+                    </div>
+                    <div id="activeFocusBanner" class="hidden"></div>
+                </div>
+                <div id="craftingList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const BIOMES_DATA = {
+            "The Drowned Delta": {
+                gear: "Delta Wayfinder & Gator-bite Rod",
+                items: ["Coral", "Seaweed", "Plastic Pile", "Message in a Bottle", "Sea Shell", "Muddy Leather Boot", "Overgrown Lantern", "Clay Jar", "Cryptic Stone Tablet"],
+                rarities: {
+                    "Common": ["Atlantic Salmon", "Southern Stingray", "Cuban Crocodile", "Payara", "Betta Fish", "Alligator Gar", "Coral", "Seaweed", "Plastic Pile", "Message in a Bottle", "Sea Shell", "Muddy Leather Boot"],
+                    "Uncommon": ["Threetooth Pufferfish", "Largetooth Sawfish", "Arapaima", "Piraíba", "Gharial", "Overgrown Lantern"],
+                    "Rare": ["Leopard Shark", "Stupendemys", "Ocellate River Stingray", "Clay Jar"],
+                    "Legendary": ["Spinosaurus", "Rhizodus", "Basilosaurus"]
+                }
+            },
+            "The Coral Gardens": {
+                gear: "Coral Wayfinder & Reefbloom Rod",
+                items: ["Coral", "Seaweed", "Plastic Pile", "Message in a Bottle", "Sea Shell", "Pristine Pearl Trinket"],
+                rarities: {
+                    "Common": ["Green Sea Turtle", "Giant Moray Eel", "Southern Stingray", "Common Octopus", "Mandarinfish", "Titan Triggerfish", "Coral", "Seaweed", "Plastic Pile", "Message in a Bottle", "Sea Shell"],
+                    "Uncommon": ["Bottlenose Dolphin", "Largetooth Sawfish", "Threetooth Pufferfish", "Giant Manta Ray", "Whale Shark", "Parrotfish", "Clown Triggerfish", "Pristine Pearl Trinket"],
+                    "Rare": ["Leopard Shark", "Psychedelic Frogfish", "Ribbon Eel", "Lionfish", "Peacock Mantis Shrimp", "Queen Triggerfish", "Blue-Ringed Octopus"],
+                    "Legendary": ["Hammerhead Shark", "Japanese Pufferfish", "Anomalocaris"]
+                }
+            },
+            "The Emerald Kelp Catacombs": {
+                gear: "Catacombs Wayfinder & Kelpstrangler Rod",
+                items: ["Coral", "Seaweed", "Plastic Pile", "Message in a Bottle", "Sea Shell", "Parrot", "Potato", "Rusty Anchor", "Sea Glass", "Brass Astrolabe", "Cryptic Stone Tablet", "Spinach Pipefish"],
+                rarities: {
+                    "Common": ["Giant Moray Eel", "Atlantic Salmon", "Dogfish Shark", "Common Octopus", "Atlantic Cod", "Coral", "Seaweed", "Plastic Pile", "Message in a Bottle", "Sea Shell"],
+                    "Uncommon": ["Coelacanth", "Horn Shark", "Garibaldi", "Wolf Eel", "Cabezon", "Parrot", "Potato", "Rusty Anchor", "Sea Glass", "Brass Astrolabe"],
+                    "Rare": ["Leopard Shark", "Leafy Seadragon", "Spinach Pipefish", "Cryptic Stone Tablet"],
+                    "Legendary": ["Xiphactinus", "Elasmosaurus", "Dunkleosteus"]
+                }
+            },
+            "The Pelagic Blue Expanse": {
+                gear: "Pelagic Wayfinder & Thresher's Tether Rod",
+                items: ["Parrot", "Potato", "Rusty Anchor", "Sea Glass", "Cracked Compass", "Pirate Flag", "Shark Tooth", "Gems", "Brass Spyglass"],
+                rarities: {
+                    "Common": ["Atlantic Salmon", "Dogfish Shark", "Green Sea Turtle", "Ocean Sunfish", "Yellowfin Tuna"],
+                    "Uncommon": ["Bottlenose Dolphin", "Whale Shark", "Giant Manta Ray", "Firefly Squid", "Blue Marlin", "Mahi-Mahi", "Sailfish", "Parrot", "Potato", "Rusty Anchor", "Sea Glass", "Cracked Compass"],
+                    "Rare": ["Giant Oarfish", "Sperm Whale", "Humpback Whale", "Rice's Whale", "Pirate Flag", "Shark Tooth", "Gems", "Brass Spyglass"],
+                    "Legendary": ["Megalodon", "Orca", "Blue Whale"]
+                }
+            },
+            "The Abyssal Hadal Trench": {
+                gear: "Hadal Wayfinder & Hadal Rod",
+                items: ["Pirate Flag", "Shark Tooth", "Gems", "Submarine Scrap", "Bioluminescent Crystal", "Firefly Squid"],
+                rarities: {
+                    "Common": ["Vampire Squid", "Hadal Snailfish", "Fangtooth", "Black Dragonfish"],
+                    "Uncommon": ["Firefly Squid", "Coelacanth", "Yeti Crab", "Blobfish", "Giant Isopod", "Dumbo Octopus"],
+                    "Rare": ["Sperm Whale", "Giant Oarfish", "Barreleye Fish", "Goblin Shark", "Pirate Flag", "Shark Tooth", "Gems", "Submarine Scrap"],
+                    "Legendary": ["Colossal Squid", "Japanese Spider Crab", "Pelican Eel", "Bioluminescent Crystal"]
+                }
+            }
+        };
+
+        const ITEMS_LIST = [
+            "Coral", "Seaweed", "Plastic Pile", "Message in a Bottle", "Sea Shell", 
+            "Muddy Leather Boot", "Overgrown Lantern", "Clay Jar", "Pristine Pearl Trinket", 
+            "Parrot", "Potato", "Rusty Anchor", "Sea Glass", "Brass Astrolabe", 
+            "Cryptic Stone Tablet", "Cracked Compass", "Pirate Flag", "Shark Tooth", 
+            "Gems", "Brass Spyglass", "Submarine Scrap", "Bioluminescent Crystal", "Ticket Scrap"
+        ];
+
+        const BAITS_LIST = [
+            "Boss Bait", "Cluster Bait", "XP Bait", "Money Bait", "Magnet Bait", "Speed Bait"
+        ];
+
+        const GEAR_REWARDS = [
+            "Fishing Gear Crate", "Submarine", "Fish and Chips", "XP Ticket", 
+            "Reefbloom Rod", "Coral Wayfinder", "Kelpstrangler Rod", "Catacomb Wayfinder", 
+            "Thresher's Tether Rod", "Pelagic Wayfinder", "Hadal Rod", "Hadal Wayfinder"
+        ];
+
+        const RARITY_RANK = { "Legendary": 4, "Rare": 3, "Uncommon": 2, "Common": 1, "Other": 0 };
+
+        const DEFAULT_RECIPES = {
+            "Fishing Gear Crate": {
+                ingredients: {"Coral": 15, "Seaweed": 15, "Rusty Anchor": 10, "Clay Jar": 5, "Cryptic Stone Tablet": 5},
+                output: "Fishing Gear Crate x1"
+            },
+            "Submarine": {
+                ingredients: {"Overgrown Lantern": 15, "Pristine Pearl Trinket": 15, "Brass Astrolabe": 10, "Brass Spyglass": 10, "Submarine Scrap": 5},
+                output: "Submarine x1"
+            },
+            "Fish and Chips": {
+                ingredients: {"Money": 10000, "Atlantic Salmon": 15, "Message in a Bottle": 15, "Giant Moray Eel": 10, "Potato": 10},
+                output: "Fish and Chips x1"
+            },
+            "XP Ticket": {
+                ingredients: {"Ticket Scrap": 50, "Green Sea Turtle": 15, "Southern Stingray": 15, "Payara": 7, "Betta Fish": 7},
+                output: "XP Ticket x1"
+            },
+            "Reefbloom Rod": {
+                ingredients: {"Money": 50000, "Alligator Gar": 20, "Gharial": 15, "Stupendemys": 10, "Spinosaurus": 1},
+                output: "Reefbloom Rod x1"
+            },
+            "Coral Wayfinder": {
+                ingredients: {"Money": 50000, "Cuban Crocodile": 20, "Arapaima": 15, "Ocellate River Stingray": 10, "Rhizodus": 1},
+                output: "Coral Wayfinder x1"
+            },
+            "Kelpstrangler Rod": {
+                ingredients: {"Money": 50000, "Mandarinfish": 20, "Clown Triggerfish": 15, "Ribbon Eel": 10, "Anomalocaris": 1},
+                output: "Kelpstrangler Rod x1"
+            },
+            "Catacomb Wayfinder": {
+                ingredients: {"Money": 50000, "Titan Triggerfish": 20, "Parrotfish": 15, "Psychedelic Frogfish": 10, "Hammerhead Shark": 1},
+                output: "Catacomb Wayfinder x1"
+            },
+            "Thresher's Tether Rod": {
+                ingredients: {"Money": 50000, "Wolf Eel": 20, "Garibaldi": 20, "Spinach Pipefish": 10, "Dunkleosteus": 2},
+                output: "Thresher's Tether Rod x1"
+            },
+            "Pelagic Wayfinder": {
+                ingredients: {"Money": 50000, "Horn Shark": 20, "Cabezon": 20, "Leafy Seadragon": 10, "Xiphactinus": 2},
+                output: "Pelagic Wayfinder x1"
+            },
+            "Hadal Rod": {
+                ingredients: {"Money": 50000, "Yellowfin Tuna": 30, "Blue Marlin": 25, "Rice's Whale": 20, "Megalodon": 3},
+                output: "Hadal Rod x1"
+            },
+            "Hadal Wayfinder": {
+                ingredients: {"Money": 50000, "Ocean Sunfish": 30, "Mahi-Mahi": 25, "Humpback Whale": 20, "Orca": 3},
+                output: "Hadal Wayfinder x1"
+            }
+        };
+
+        function getItemDetails(name) {
+            let rarity = 'Other';
+            let biomes = [];
+
+            for (const [biomeName, biomeData] of Object.entries(BIOMES_DATA)) {
+                for (const [r, list] of Object.entries(biomeData.rarities)) {
+                    if (list.some(f => f.toLowerCase() === name.toLowerCase())) {
+                        rarity = r;
+                        if (!biomes.includes(biomeName)) biomes.push(biomeName);
+                    }
+                }
+                if (biomeData.items.some(i => i.toLowerCase() === name.toLowerCase())) {
+                    if (!biomes.includes(biomeName)) biomes.push(biomeName);
+                }
+            }
+            return { rarity, biomes };
+        }
+
+        function getItemType(name, rarity) {
+            if (BAITS_LIST.some(b => b.toLowerCase() === name.toLowerCase()) || name.toLowerCase().endsWith('bait')) return 'Bait';
+            if (GEAR_REWARDS.some(g => g.toLowerCase() === name.toLowerCase())) return 'Gear';
+            if (ITEMS_LIST.some(i => i.toLowerCase() === name.toLowerCase())) return 'Item';
+            if (rarity !== 'Other') return 'Fish';
+            return 'Item';
+        }
+
+        let rawInventory = JSON.parse(localStorage.getItem('fish_tracker_inventory')) || {};
+        let inventory = {};
+        
+        for (const [name, val] of Object.entries(rawInventory)) {
+            let count = typeof val === 'number' ? val : (val.count || 0);
+            let details = getItemDetails(name);
+            let type = getItemType(name, details.rarity);
+            inventory[name] = { count: count, type: type, rarity: details.rarity, biomes: details.biomes };
+        }
+
+        let playerMoney = parseInt(localStorage.getItem('fish_tracker_money')) || 0;
+        let recipes = JSON.parse(localStorage.getItem('fish_tracker_recipes')) || DEFAULT_RECIPES;
+        
+        let tempRecipeIngredients = {};
+        let inventorySearchQuery = '';
+        let inventorySortBy = 'name-asc';
+        let inventoryFilter = 'all';
+
+        let focusedRecipeName = localStorage.getItem('fish_tracker_focused_recipe') || null;
+        if (focusedRecipeName && !recipes[focusedRecipeName]) {
+            focusedRecipeName = null;
+        }
+        let showOnlyFocusedRecipeItems = false;
+
+        function populateDropdowns() {
+            const fishSelect = document.getElementById('fishSelectInput');
+            const ingSelect = document.getElementById('ingSelectInput');
+
+            let html = `<optgroup label="✨ Custom Item">
+                <option value="CUSTOM">-- Type Custom Item --</option>
+            </optgroup>`;
+
+            html += `<optgroup label="📦 Items">`;
+            ITEMS_LIST.forEach(item => {
+                html += `<option value="${item}">${item}</option>`;
+            });
+            html += `</optgroup>`;
+
+            html += `<optgroup label="🪱 Baits">`;
+            BAITS_LIST.forEach(bait => {
+                html += `<option value="${bait}">${bait}</option>`;
+            });
+            html += `</optgroup>`;
+
+            html += `<optgroup label="🎣 Crafting Rewards & Gear">`;
+            GEAR_REWARDS.forEach(gear => {
+                html += `<option value="${gear}">${gear}</option>`;
+            });
+            html += `</optgroup>`;
+
+            for (const [biomeName, biomeData] of Object.entries(BIOMES_DATA)) {
+                html += `<optgroup label="🌊 ${biomeName} (Fish)">`;
+                let fishOnly = Object.values(biomeData.rarities).flat().filter(f => !ITEMS_LIST.includes(f));
+                let uniqueFish = [...new Set(fishOnly)];
+                uniqueFish.sort().forEach(fish => {
+                    html += `<option value="${fish}">${fish}</option>`;
+                });
+                html += `</optgroup>`;
+            }
+
+            fishSelect.innerHTML = html;
+            ingSelect.innerHTML = `<option value="Any Fish">Any Fish</option><option value="Money">Money</option>` + html;
+        }
+
+        function handleFishSelectionChange(event) {
+            const val = event.target.value;
+            const customContainer = document.getElementById('customNameContainer');
+            if (val === 'CUSTOM') {
+                customContainer.classList.remove('hidden');
+                document.getElementById('customFishNameInput').focus();
+            } else {
+                customContainer.classList.add('hidden');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
+                btn.classList.add('bg-slate-900', 'text-slate-300', 'hover:bg-slate-800');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('bg-slate-900', 'text-slate-300', 'hover:bg-slate-800');
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-lg');
+        }
+
+        function saveData() {
+            localStorage.setItem('fish_tracker_inventory', JSON.stringify(inventory));
+            localStorage.setItem('fish_tracker_recipes', JSON.stringify(recipes));
+            localStorage.setItem('fish_tracker_money', playerMoney);
+            if (focusedRecipeName) {
+                localStorage.setItem('fish_tracker_focused_recipe', focusedRecipeName);
+            } else {
+                localStorage.removeItem('fish_tracker_focused_recipe');
+            }
+            renderApp();
+        }
+
+        function focusRecipe(recipeName, autoJumpToInventory = true) {
+            if (focusedRecipeName === recipeName && !autoJumpToInventory) {
+                clearFocusedRecipe();
+                return;
+            }
+            focusedRecipeName = recipeName;
+            showOnlyFocusedRecipeItems = false;
+            saveData();
+            if (autoJumpToInventory) {
+                switchTab('tab-inventory');
+            }
+        }
+
+        function clearFocusedRecipe() {
+            focusedRecipeName = null;
+            showOnlyFocusedRecipeItems = false;
+            saveData();
+        }
+
+        function toggleShowOnlyFocusedItems() {
+            showOnlyFocusedRecipeItems = !showOnlyFocusedRecipeItems;
+            if (showOnlyFocusedRecipeItems) {
+                inventorySearchQuery = '';
+                document.getElementById('inventorySearchInput').value = '';
+                document.getElementById('clearSearchBtn').classList.add('hidden');
+            }
+            renderQuickFilters();
+            renderInventory();
+        }
+
+        function promptEditMoney() {
+            const newMoney = prompt("Enter your current Money balance:", playerMoney);
+            if (newMoney !== null && !isNaN(newMoney)) {
+                playerMoney = parseInt(newMoney);
+                saveData();
+            }
+        }
+
+        function toTitleCase(str) {
+            return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+        }
+
+        function exportData() {
+            const backupData = { inventory: inventory, recipes: recipes, money: playerMoney };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "fish_biomes_tracker_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.inventory && parsed.recipes) {
+                        inventory = parsed.inventory;
+                        recipes = parsed.recipes;
+                        playerMoney = parsed.money || 0;
+                        saveData();
+                        alert("✅ Successfully imported data!");
+                    } else {
+                        alert("❌ Invalid backup file format.");
+                    }
+                } catch (err) {
+                    alert("❌ Error parsing JSON file: " + err.message);
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function handleFishSubmit(event) {
+            event.preventDefault();
+            const selectEl = document.getElementById('fishSelectInput');
+            const qtyInput = document.getElementById('fishQtyInput');
+            
+            let name = selectEl.value;
+            if (name === 'CUSTOM') {
+                const customInput = document.getElementById('customFishNameInput');
+                name = toTitleCase(customInput.value.trim());
+                customInput.value = '';
+                customInput.parentElement.classList.add('hidden');
+                selectEl.value = document.querySelector('optgroup option').value;
+            }
+
+            if (!name) return;
+
+            const newQty = parseInt(qtyInput.value) || 0;
+            let details = getItemDetails(name);
+            let type = getItemType(name, details.rarity);
+
+            if (newQty <= 0) {
+                delete inventory[name];
+            } else {
+                inventory[name] = { count: newQty, type: type, rarity: details.rarity, biomes: details.biomes };
+            }
+
+            inventorySearchQuery = '';
+            document.getElementById('inventorySearchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            qtyInput.value = '1';
+            saveData();
+
+            switchTab('tab-inventory');
+        }
+
+        function adjustQuantity(name, amount) {
+            if (!inventory[name]) return;
+            const current = inventory[name].count || 0;
+            const updated = current + amount;
+            if (updated <= 0) {
+                delete inventory[name];
+            } else {
+                inventory[name].count = updated;
+            }
+            saveData();
+        }
+
+        function removeFishItem(name) {
+            delete inventory[name];
+            saveData();
+        }
+
+        function handleSearchInput(event) {
+            const val = event.target.value;
+            inventorySearchQuery = val.trim().toLowerCase();
+            showOnlyFocusedRecipeItems = false;
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (val.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            renderQuickFilters();
+            renderInventory();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('inventorySearchInput');
+            input.value = '';
+            inventorySearchQuery = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            renderQuickFilters();
+            renderInventory();
+        }
+
+        function quickFilterItem(keyword) {
+            const input = document.getElementById('inventorySearchInput');
+            if (inventorySearchQuery === keyword.toLowerCase()) {
+                clearSearch();
+                return;
+            }
+            showOnlyFocusedRecipeItems = false;
+            input.value = keyword;
+            inventorySearchQuery = keyword.toLowerCase();
+            document.getElementById('clearSearchBtn').classList.remove('hidden');
+            renderQuickFilters();
+            renderInventory();
+        }
+
+        function setSort(sortType) {
+            inventorySortBy = sortType;
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow');
+                btn.classList.add('bg-slate-950', 'text-slate-300', 'hover:bg-slate-800', 'border', 'border-slate-800');
+            });
+            const activeBtn = document.getElementById('sort-btn-' + sortType);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-950', 'text-slate-300', 'hover:bg-slate-800', 'border', 'border-slate-800');
+                activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow');
+            }
+            renderInventory();
+        }
+
+        function setFilter(filterType) {
+            inventoryFilter = filterType;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow');
+                btn.classList.add('bg-slate-950', 'text-slate-300', 'hover:bg-slate-800');
+            });
+            const activeBtn = document.getElementById('filter-btn-' + filterType);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-950', 'text-slate-300', 'hover:bg-slate-800');
+                activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow');
+            }
+            renderInventory();
+        }
+
+        function addIngredientToBuilder() {
+            const selectEl = document.getElementById('ingSelectInput');
+            const qtyInput = document.getElementById('ingQtyInput');
+
+            let name = selectEl.value;
+            if (name === 'CUSTOM') return;
+            const qty = parseInt(qtyInput.value) || 1;
+
+            tempRecipeIngredients[name] = qty;
+            qtyInput.value = '1';
+            renderBuilderIngredients();
+        }
+
+        function removeIngredientFromBuilder(name) {
+            delete tempRecipeIngredients[name];
+            renderBuilderIngredients();
+        }
+
+        function renderBuilderIngredients() {
+            const container = document.getElementById('builderIngredientsList');
+            const entries = Object.entries(tempRecipeIngredients);
+
+            if (entries.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 italic">No ingredients added yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = entries.map(([name, qty]) => `
+                <div class="flex justify-between items-center bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
+                    <span class="text-slate-200">${name} <span class="text-purple-400 font-semibold">(Req: ${qty})</span></span>
+                    <button type="button" onclick="removeIngredientFromBuilder('${name}')" class="text-rose-400 hover:text-rose-300 font-bold px-1">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function handleRecipeSubmit(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('recipeNameInput');
+            const outputInput = document.getElementById('recipeOutputInput');
+
+            const recipeName = nameInput.value.trim();
+            const recipeOutput = outputInput.value.trim();
+
+            if (Object.keys(tempRecipeIngredients).length === 0) {
+                alert("Please add at least one ingredient to your recipe!");
+                return;
+            }
+
+            recipes[recipeName] = {
+                ingredients: { ...tempRecipeIngredients },
+                output: recipeOutput
+            };
+
+            nameInput.value = '';
+            outputInput.value = '';
+            tempRecipeIngredients = {};
+            renderBuilderIngredients();
+            saveData();
+
+            switchTab('tab-crafts');
+        }
+
+        function deleteRecipe(recipeName) {
+            if (confirm(`Are you sure you want to delete the recipe "${recipeName}"?`)) {
+                if (focusedRecipeName === recipeName) {
+                    focusedRecipeName = null;
+                    showOnlyFocusedRecipeItems = false;
+                }
+                delete recipes[recipeName];
+                saveData();
+            }
+        }
+
+        function resetAllData() {
+            if (confirm("Are you sure you want to reset all inventory, money, and recipes back to default?")) {
+                inventory = {};
+                recipes = {...DEFAULT_RECIPES};
+                playerMoney = 0;
+                focusedRecipeName = null;
+                showOnlyFocusedRecipeItems = false;
+                localStorage.removeItem('fish_tracker_inventory');
+                localStorage.removeItem('fish_tracker_recipes');
+                localStorage.removeItem('fish_tracker_money');
+                localStorage.removeItem('fish_tracker_focused_recipe');
+                renderApp();
+            }
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function renderQuickFilters() {
+            const container = document.getElementById('quickFilterContainer');
+
+            if (focusedRecipeName && recipes[focusedRecipeName]) {
+                const recipe = recipes[focusedRecipeName];
+                const totalFishCount = Object.entries(inventory)
+                    .filter(([_, data]) => data.type === 'Fish')
+                    .reduce((acc, [_, data]) => acc + data.count, 0);
+
+                let pillsHtml = `
+                    <div class="bg-slate-950/80 border border-indigo-500/30 p-3 rounded-xl space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                                    🎯 Focused Craft: <strong class="text-white">${focusedRecipeName}</strong>
+                                </span>
+                                <button onclick="toggleShowOnlyFocusedItems()" class="text-[11px] px-2.5 py-1 rounded-lg font-medium transition border ${showOnlyFocusedRecipeItems ? 'bg-emerald-600 text-white border-emerald-500 shadow' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'}">
+                                    ${showOnlyFocusedRecipeItems ? '✓ Showing All Needed' : '👁️ Show All Needed'}
+                                </button>
+                            </div>
+                            <button onclick="clearFocusedRecipe()" class="text-[11px] text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1 rounded-lg transition font-medium">
+                                ✕ Clear Focus
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-800">
+                            <span class="text-[11px] text-slate-400 font-medium mr-1">Required Ingredients:</span>
+                `;
+
+                for (const [ing, reqQty] of Object.entries(recipe.ingredients)) {
+                    if (ing === "Money") {
+                        const hasEnough = playerMoney >= reqQty;
+                        pillsHtml += `
+                            <button onclick="promptEditMoney()" title="Click to update money"
+                                class="text-[11px] px-2.5 py-1 rounded-lg transition border flex items-center gap-1 font-medium ${hasEnough ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' : 'bg-amber-500/15 border-amber-500/30 text-amber-300 hover:bg-amber-500/25'}">
+                                <span>${hasEnough ? '✅' : '🪙'}</span>
+                                <span>Money: $${playerMoney.toLocaleString()} / $${reqQty.toLocaleString()}</span>
+                            </button>
+                        `;
+                    } else if (ing.toLowerCase() === "any fish") {
+                        const hasEnough = totalFishCount >= reqQty;
+                        pillsHtml += `
+                            <button onclick="setFilter('fish')"
+                                class="text-[11px] px-2.5 py-1 rounded-lg transition border flex items-center gap-1 font-medium ${hasEnough ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25'}">
+                                <span>${hasEnough ? '✅' : '❌'}</span>
+                                <span>Any Fish (${totalFishCount}/${reqQty})</span>
+                            </button>
+                        `;
+                    } else {
+                        const haveQty = inventory[ing] ? inventory[ing].count : 0;
+                        const hasEnough = haveQty >= reqQty;
+                        const isActiveSearch = inventorySearchQuery === ing.toLowerCase();
+                        pillsHtml += `
+                            <button onclick="quickFilterItem('${ing.replace(/'/g, "\\'")}')"
+                                class="text-[11px] px-2.5 py-1 rounded-lg transition border flex items-center gap-1 font-medium ${isActiveSearch ? 'ring-2 ring-indigo-400 ' : ''}${hasEnough ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25' : 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25'}">
+                                <span>${hasEnough ? '✅' : '❌'}</span>
+                                <span>${ing} (${haveQty}/${reqQty})</span>
+                            </button>
+                        `;
+                    }
+                }
+
+                pillsHtml += `</div></div>`;
+                container.innerHTML = pillsHtml;
+            } else {
+                container.innerHTML = '';
+            }
+        }
+
+        function renderInventory() {
+            document.getElementById('headerMoneyDisplay').innerText = `$${playerMoney.toLocaleString()}`;
+            renderQuickFilters();
+
+            const container = document.getElementById('inventoryList');
+            let entries = Object.entries(inventory);
+
+            if (showOnlyFocusedRecipeItems && focusedRecipeName && recipes[focusedRecipeName]) {
+                const neededKeys = Object.keys(recipes[focusedRecipeName].ingredients).map(k => k.toLowerCase());
+                entries = entries.filter(([name, _]) => neededKeys.includes(name.toLowerCase()));
+            }
+
+            if (inventoryFilter === 'fish') {
+                entries = entries.filter(([_, data]) => data.type === 'Fish');
+            } else if (inventoryFilter === 'bait') {
+                entries = entries.filter(([_, data]) => data.type === 'Bait');
+            } else if (inventoryFilter === 'item') {
+                entries = entries.filter(([_, data]) => data.type === 'Item');
+            } else if (inventoryFilter === 'gear') {
+                entries = entries.filter(([_, data]) => data.type === 'Gear');
+            } else if (['Common', 'Uncommon', 'Rare', 'Legendary'].includes(inventoryFilter)) {
+                entries = entries.filter(([_, data]) => data.rarity === inventoryFilter);
+            }
+
+            if (inventorySearchQuery) {
+                entries = entries.filter(([name, data]) => 
+                    name.toLowerCase().includes(inventorySearchQuery) || 
+                    data.count.toString().includes(inventorySearchQuery) ||
+                    data.rarity.toLowerCase().includes(inventorySearchQuery) ||
+                    data.type.toLowerCase().includes(inventorySearchQuery) ||
+                    (data.biomes && data.biomes.some(b => b.toLowerCase().includes(inventorySearchQuery)))
+                );
+            }
+
+            const biomeOrder = Object.keys(BIOMES_DATA);
+
+            entries.sort((a, b) => {
+                const nameA = a[0];
+                const nameB = b[0];
+                const countA = a[1].count;
+                const countB = b[1].count;
+                const rarityA = RARITY_RANK[a[1].rarity] || 0;
+                const rarityB = RARITY_RANK[b[1].rarity] || 0;
+
+                if (inventorySortBy === 'name-asc') {
+                    return nameA.localeCompare(nameB);
+                } else if (inventorySortBy === 'name-desc') {
+                    return nameB.localeCompare(nameA);
+                } else if (inventorySortBy === 'qty-desc') {
+                    return countB - countA;
+                } else if (inventorySortBy === 'qty-asc') {
+                    return countA - countB;
+                } else if (inventorySortBy === 'rarity') {
+                    if (rarityB !== rarityA) return rarityB - rarityA;
+                    return nameA.localeCompare(nameB);
+                } else if (inventorySortBy === 'biome') {
+                    const biomeA = (a[1].biomes && a[1].biomes.length > 0) ? a[1].biomes[0] : 'zzz_Other';
+                    const biomeB = (b[1].biomes && b[1].biomes.length > 0) ? b[1].biomes[0] : 'zzz_Other';
+                    const idxA = biomeOrder.indexOf(biomeA) !== -1 ? biomeOrder.indexOf(biomeA) : 999;
+                    const idxB = biomeOrder.indexOf(biomeB) !== -1 ? biomeOrder.indexOf(biomeB) : 999;
+                    if (idxA !== idxB) return idxA - idxB;
+                    return nameA.localeCompare(nameB);
+                }
+                return 0;
+            });
+
+            const totalItemsCount = Object.values(inventory).reduce((acc, curr) => acc + curr.count, 0);
+            document.getElementById('totalFishBadge').innerText = `${totalItemsCount} Total Items`;
+            document.getElementById('navInventoryCount').innerText = Object.keys(inventory).length;
+
+            if (entries.length === 0) {
+                const message = Object.keys(inventory).length === 0 
+                    ? "Your inventory is empty. Add items in the first tab!" 
+                    : "No matching items found in your inventory.";
+                container.innerHTML = `<p class="text-sm text-slate-500 text-center py-8 col-span-full">${message}</p>`;
+                return;
+            }
+
+            container.innerHTML = entries.map(([name, data]) => {
+                let badgeColor = 'bg-slate-800 text-slate-300';
+                if (data.type === 'Bait') badgeColor = 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                else if (data.rarity === 'Common') badgeColor = 'bg-slate-700/50 text-slate-300 border border-slate-600/30';
+                else if (data.rarity === 'Uncommon') badgeColor = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                else if (data.rarity === 'Rare') badgeColor = 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+                else if (data.rarity === 'Legendary') badgeColor = 'bg-amber-400/20 text-amber-300 border border-amber-400/30';
+                else if (data.type === 'Gear') badgeColor = 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+                else if (data.type === 'Item') badgeColor = 'bg-sky-500/20 text-sky-300 border border-sky-500/30';
+
+                const badgeLabel = data.type === 'Bait' ? 'Bait' : (data.rarity !== 'Other' ? data.rarity : data.type);
+                const subtext = data.type === 'Bait' ? '🪱 Fishing Bait' : `🌊 ${data.biomes && data.biomes.length > 0 ? data.biomes.join(', ') : 'Various / Custom'}`;
+                const highlightedName = highlightMatch(name, inventorySearchQuery);
+
+                let craftReqBadge = '';
+                if (focusedRecipeName && recipes[focusedRecipeName]) {
+                    const reqQty = recipes[focusedRecipeName].ingredients[name];
+                    if (reqQty !== undefined) {
+                        const met = data.count >= reqQty;
+                        craftReqBadge = `<span class="text-[10px] px-1.5 py-0.5 rounded font-semibold ml-1.5 ${met ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">Need: ${data.count}/${reqQty}</span>`;
+                    }
+                }
+
+                return `
+                    <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl hover:border-slate-700 transition shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-medium text-slate-200 text-sm">${highlightedName}</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-md font-semibold ${badgeColor}">${badgeLabel}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-0.5 truncate max-w-[210px]" title="${subtext}">${subtext}</div>
+                            <div class="text-xs text-indigo-300 font-semibold mt-1 flex items-center">
+                                Qty: ${data.count} ${craftReqBadge}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', 1)" class="w-7 h-7 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center transition">+</button>
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', -1)" class="w-7 h-7 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center transition">-</button>
+                            <button onclick="removeFishItem('${name.replace(/'/g, "\\'")}')" class="w-7 h-7 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs flex items-center justify-center ml-1 transition" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCrafting() {
+            const container = document.getElementById('craftingList');
+            const banner = document.getElementById('activeFocusBanner');
+
+            if (focusedRecipeName && recipes[focusedRecipeName]) {
+                banner.classList.remove('hidden');
+                banner.innerHTML = `
+                    <div class="flex items-center gap-2 bg-indigo-500/20 border border-indigo-500/40 px-3 py-1.5 rounded-xl text-xs">
+                        <span class="text-indigo-200">🎯 Focused: <strong>${focusedRecipeName}</strong></span>
+                        <button onclick="clearFocusedRecipe()" class="text-rose-300 hover:text-rose-200 font-bold ml-1">✕</button>
+                    </div>
+                `;
+            } else {
+                banner.classList.add('hidden');
+            }
+
+            const totalFishCount = Object.entries(inventory)
+                .filter(([_, data]) => data.type === 'Fish')
+                .reduce((acc, [_, data]) => acc + data.count, 0);
+
+            let html = '';
+
+            for (const [recipeName, details] of Object.entries(recipes)) {
+                let canCraftMin = Infinity;
+                let missingItems = [];
+                let ingredientHtml = '';
+                const isFocused = focusedRecipeName === recipeName;
+
+                for (const [ing, reqQty] of Object.entries(details.ingredients)) {
+                    if (ing === "Money") {
+                        const hasEnoughMoney = playerMoney >= reqQty;
+                        canCraftMin = Math.min(canCraftMin, Math.floor(playerMoney / reqQty));
+                        ingredientHtml += `
+                            <div class="flex justify-between items-center text-sm py-1.5 border-b border-slate-800 last:border-0">
+                                <span class="text-slate-300 flex items-center gap-1.5">
+                                    <span>${hasEnoughMoney ? '✅' : '❌'}</span> Money
+                                </span>
+                                <span class="${hasEnoughMoney ? 'text-emerald-400' : 'text-rose-400'} font-medium">
+                                    $${playerMoney.toLocaleString()} / $${reqQty.toLocaleString()}
+                                </span>
+                            </div>
+                        `;
+                        if (!hasEnoughMoney) missingItems.push(`$${(reqQty - playerMoney).toLocaleString()} more Money`);
+                    } else if (ing.toLowerCase() === "any fish") {
+                        const possible = reqQty > 0 ? Math.floor(totalFishCount / reqQty) : 0;
+                        canCraftMin = Math.min(canCraftMin, possible);
+                        const hasEnough = totalFishCount >= reqQty;
+                        ingredientHtml += `
+                            <div class="flex justify-between items-center text-sm py-1.5 border-b border-slate-800 last:border-0">
+                                <span class="text-slate-300 flex items-center gap-1.5">
+                                    <span>${hasEnough ? '✅' : '❌'}</span> Any Fish
+                                </span>
+                                <span class="${hasEnough ? 'text-emerald-400' : 'text-rose-400'} font-medium">
+                                    ${totalFishCount} / ${reqQty} needed
+                                </span>
+                            </div>
+                        `;
+                        if (!hasEnough) missingItems.push(`${reqQty - totalFishCount} more generic fish`);
+                    } else {
+                        const haveQty = inventory[ing] ? inventory[ing].count : 0;
+                        const possible = reqQty > 0 ? Math.floor(haveQty / reqQty) : 0;
+                        canCraftMin = Math.min(canCraftMin, possible);
+                        const hasEnough = haveQty >= reqQty;
+                        
+                        const detailsItem = getItemDetails(ing);
+                        const rarityText = detailsItem.rarity !== 'Other' ? `(${detailsItem.rarity})` : '';
+                        const biomeText = detailsItem.biomes.length > 0 ? `[${detailsItem.biomes.join(', ')}]` : '';
+
+                        ingredientHtml += `
+                            <div class="flex justify-between items-center text-sm py-1.5 border-b border-slate-800 last:border-0">
+                                <span class="text-slate-300 flex items-center gap-1.5">
+                                    <span>${hasEnough ? '✅' : '❌'}</span> 
+                                    <div>
+                                        <span>${ing}</span>
+                                        <div class="text-[10px] text-slate-400">${rarityText} ${biomeText}</div>
+                                    </div>
+                                </span>
+                                <span class="${hasEnough ? 'text-emerald-400' : 'text-rose-400'} font-medium">
+                                    ${haveQty} / ${reqQty}
+                                </span>
+                            </div>
+                        `;
+                        if (!hasEnough) missingItems.push(`${reqQty - haveQty} more ${ing}`);
+                    }
+                }
+
+                if (canCraftMin === Infinity || isNaN(canCraftMin)) canCraftMin = 0;
+                const isReady = canCraftMin > 0;
+
+                const borderClass = isFocused 
+                    ? 'border-indigo-500 ring-1 ring-indigo-500/50 bg-indigo-950/15' 
+                    : (isReady ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-slate-800 bg-slate-950/60');
+
+                html += `
+                    <div class="border ${borderClass} p-4 rounded-2xl space-y-3 relative group shadow-sm transition">
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <h3 class="font-semibold text-slate-100 flex items-center gap-2">
+                                    ${recipeName}
+                                </h3>
+                                <p class="text-xs text-indigo-300">Yields: ${details.output}</p>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button onclick="focusRecipe('${recipeName.replace(/'/g, "\\'")}', true)" 
+                                    class="text-xs px-2.5 py-1 rounded-full font-semibold transition flex items-center gap-1 ${isFocused ? 'bg-indigo-600 text-white shadow' : 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30'}"
+                                    title="Focus this craft in Inventory">
+                                    🎯 ${isFocused ? 'Focused' : 'Focus'}
+                                </button>
+                                <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${isReady ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+                                    Craft: ${canCraftMin}
+                                </span>
+                                <button onclick="deleteRecipe('${recipeName.replace(/'/g, "\\'")}')" class="text-xs text-rose-400/70 hover:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded-lg transition" title="Delete Recipe">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                            ${ingredientHtml}
+                        </div>
+                        ${missingItems.length > 0 ? `
+                            <p class="text-xs text-amber-400/90 flex items-center gap-1">
+                                <span>⚠️</span> Missing: ${missingItems.join(', ')}
+                            </p>
+                        ` : `
+                            <p class="text-xs text-emerald-400 flex items-center gap-1">
+                                <span>✨</span> Ready to craft!
+                            </p>
+                        `}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderApp() {
+            renderInventory();
+            renderCrafting();
+        }
+
+        populateDropdowns();
+        renderApp();
+    </script>
+</body>
+</html>

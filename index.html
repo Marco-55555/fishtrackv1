@@ -77,6 +77,10 @@
             </button>
         </nav>
 
+        <!-- Shared Datalists for Mobile Keyboard Typing & Autocomplete -->
+        <datalist id="itemsDatalist"></datalist>
+        <datalist id="ingredientsDatalist"></datalist>
+
         <!-- TAB 1: ADD FISH / ITEMS -->
         <div id="tab-add" class="tab-content space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -87,25 +91,28 @@
                     </h2>
                     <form id="fishForm" onsubmit="handleFishSubmit(event)" class="space-y-3">
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Select Fish / Bait / Item / Gear</label>
-                            <select id="fishSelectInput" onchange="handleFishSelectionChange(event)"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
-                                <!-- Populated dynamically -->
-                            </select>
-                        </div>
-                        
-                        <div id="customNameContainer" class="hidden">
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Custom Item Name</label>
-                            <input type="text" id="customFishNameInput" placeholder="e.g. Special Item" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                            <label for="fishNameInput" class="block text-xs uppercase tracking-wider text-slate-400 mb-1">
+                                Type or Pick Fish / Bait / Item / Gear
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="fishNameInput" list="itemsDatalist" required
+                                    placeholder="Tap to type (e.g. Coral, Salmon, Megalodon)..."
+                                    autocomplete="off" enterkeyhint="next"
+                                    class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                                <button type="button" onclick="clearField('fishNameInput')" aria-label="Clear item input"
+                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200">
+                                    ✕
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">Supports autocomplete suggestions or any custom item name.</p>
                         </div>
 
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Total Quantity</label>
-                            <input type="number" id="fishQtyInput" value="1" min="0" required 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                            <label for="fishQtyInput" class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Total Quantity</label>
+                            <input type="number" id="fishQtyInput" value="1" min="0" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" required 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-base sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
                         </div>
-                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 sm:py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
                             Save to Inventory
                         </button>
                     </form>
@@ -118,33 +125,42 @@
                     </h2>
                     <form id="recipeForm" onsubmit="handleRecipeSubmit(event)" class="space-y-3">
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Craft / Recipe Name</label>
-                            <input type="text" id="recipeNameInput" required placeholder="e.g. Super Rod" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition">
+                            <label for="recipeNameInput" class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Craft / Recipe Name</label>
+                            <input type="text" id="recipeNameInput" required placeholder="e.g. Super Rod" enterkeyhint="next"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-base sm:text-sm text-slate-100 focus:outline-none focus:border-purple-500 transition">
                         </div>
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Yield / Output Description</label>
-                            <input type="text" id="recipeOutputInput" required placeholder="e.g. Super Rod x1" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition">
+                            <label for="recipeOutputInput" class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Yield / Output Description</label>
+                            <input type="text" id="recipeOutputInput" required placeholder="e.g. Super Rod x1" enterkeyhint="next"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-base sm:text-sm text-slate-100 focus:outline-none focus:border-purple-500 transition">
                         </div>
 
                         <!-- Ingredients Builder -->
                         <div class="space-y-2 pt-2 border-t border-slate-800">
-                            <label class="block text-xs uppercase tracking-wider text-slate-400">Required Ingredients</label>
-                            <div class="flex gap-2">
-                                <select id="ingSelectInput" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500">
-                                    <!-- Populated dynamically -->
-                                </select>
-                                <input type="number" id="ingQtyInput" value="1" min="1" placeholder="Qty" 
-                                    class="w-20 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-purple-500">
-                                <button type="button" onclick="addIngredientToBuilder()" class="bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl text-sm font-bold transition">Add</button>
+                            <label for="ingNameInput" class="block text-xs uppercase tracking-wider text-slate-400">Required Ingredients</label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <div class="relative flex-1">
+                                    <input type="text" id="ingNameInput" list="ingredientsDatalist"
+                                        placeholder="Type ingredient (e.g. Coral, Money)..."
+                                        autocomplete="off" enterkeyhint="next"
+                                        class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500">
+                                    <button type="button" onclick="clearField('ingNameInput')" aria-label="Clear ingredient input"
+                                        class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-200 text-xs">
+                                        ✕
+                                    </button>
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="number" id="ingQtyInput" value="1" min="1" placeholder="Qty" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done"
+                                        class="w-24 sm:w-20 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-base sm:text-sm text-slate-100 focus:outline-none focus:border-purple-500">
+                                    <button type="button" onclick="addIngredientToBuilder()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-sm font-bold transition">Add</button>
+                                </div>
                             </div>
                             <div id="builderIngredientsList" class="space-y-1.5 pt-1 max-h-32 overflow-y-auto">
                                 <p class="text-xs text-slate-500 italic">No ingredients added yet.</p>
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-purple-600/20 mt-2">
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-medium py-3 sm:py-2.5 rounded-xl transition shadow-lg shadow-purple-600/20 mt-2">
                             Save Custom Recipe
                         </button>
                     </form>
@@ -162,6 +178,38 @@
                     <span id="totalFishBadge" class="text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-300">0 Total Items</span>
                 </div>
 
+                <!-- Rarity Counter / Summary Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+                    <div onclick="setFilter('Legendary')" class="bg-slate-950/80 border border-amber-400/30 hover:border-amber-400/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
+                        <div class="text-[10px] uppercase tracking-wider text-amber-300 font-semibold truncate">🟡 Legendary</div>
+                        <div id="count-Legendary" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                    </div>
+                    <div onclick="setFilter('Rare')" class="bg-slate-950/80 border border-blue-500/30 hover:border-blue-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
+                        <div class="text-[10px] uppercase tracking-wider text-blue-300 font-semibold truncate">🔵 Rare</div>
+                        <div id="count-Rare" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                    </div>
+                    <div onclick="setFilter('Uncommon')" class="bg-slate-950/80 border border-emerald-500/30 hover:border-emerald-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
+                        <div class="text-[10px] uppercase tracking-wider text-emerald-300 font-semibold truncate">🟢 Uncommon</div>
+                        <div id="count-Uncommon" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                    </div>
+                    <div onclick="setFilter('Common')" class="bg-slate-950/80 border border-slate-600/30 hover:border-slate-500 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-300 font-semibold truncate">⚪ Common</div>
+                        <div id="count-Common" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                    </div>
+                    <div onclick="setFilter('bait')" class="bg-slate-950/80 border border-amber-500/30 hover:border-amber-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
+                        <div class="text-[10px] uppercase tracking-wider text-amber-400 font-semibold truncate">🪱 Bait</div>
+                        <div id="count-bait" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                    </div>
+                    <div onclick="setFilter('item')" class="bg-slate-950/80 border border-sky-500/30 hover:border-sky-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm">
+                        <div class="text-[10px] uppercase tracking-wider text-sky-300 font-semibold truncate">📦 Items</div>
+                        <div id="count-item" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                    </div>
+                    <div onclick="setFilter('gear')" class="bg-slate-950/80 border border-purple-500/30 hover:border-purple-500/60 p-2.5 rounded-xl cursor-pointer transition text-center shadow-sm col-span-2 sm:col-span-1">
+                        <div class="text-[10px] uppercase tracking-wider text-purple-300 font-semibold truncate">🎣 Gear</div>
+                        <div id="count-gear" class="text-base font-bold text-slate-100 mt-0.5">0</div>
+                    </div>
+                </div>
+
                 <!-- Search Bar -->
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -169,8 +217,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <input type="text" id="inventorySearchInput" placeholder="Type to search items, fish, baits, biomes..." oninput="handleSearchInput(event)"
-                        class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    <input type="search" id="inventorySearchInput" placeholder="Type to search items, fish, baits, biomes..." oninput="handleSearchInput(event)" enterkeyhint="search"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
                     <button onclick="clearSearch()" id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 hidden">
                         ✕
                     </button>
@@ -202,10 +250,8 @@
                     <button onclick="setFilter('Legendary')" id="filter-btn-Legendary" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🟡 Legendary</button>
                 </div>
 
-                <!-- Dynamic Quick-Filter Item Bar (Changes based on Focused Craft!) -->
-                <div id="quickFilterContainer" class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-800/80">
-                    <!-- Populated dynamically by renderQuickFilters() -->
-                </div>
+                <!-- Focused Recipe Ingredients Bar (Appears when you focus a craft) -->
+                <div id="quickFilterContainer"></div>
 
                 <!-- Inventory Grid List -->
                 <div id="inventoryList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
@@ -360,6 +406,34 @@
             }
         };
 
+        const ALL_KNOWN_NAMES = [];
+        const CANONICAL_NAME_MAP = {};
+
+        function registerKnownName(name) {
+            const lower = name.toLowerCase();
+            if (!CANONICAL_NAME_MAP[lower]) {
+                CANONICAL_NAME_MAP[lower] = name;
+                ALL_KNOWN_NAMES.push(name);
+            }
+        }
+
+        ITEMS_LIST.forEach(registerKnownName);
+        BAITS_LIST.forEach(registerKnownName);
+        GEAR_REWARDS.forEach(registerKnownName);
+        for (const biomeData of Object.values(BIOMES_DATA)) {
+            Object.values(biomeData.rarities).flat().forEach(registerKnownName);
+        }
+
+        function resolveCanonicalName(rawInput) {
+            const trimmed = rawInput.trim();
+            if (!trimmed) return '';
+            const lower = trimmed.toLowerCase();
+            if (lower === 'money') return 'Money';
+            if (lower === 'any fish') return 'Any Fish';
+            if (CANONICAL_NAME_MAP[lower]) return CANONICAL_NAME_MAP[lower];
+            return toTitleCase(trimmed);
+        }
+
         function getItemDetails(name) {
             let rarity = 'Other';
             let biomes = [];
@@ -404,61 +478,37 @@
         let inventorySortBy = 'name-asc';
         let inventoryFilter = 'all';
 
-        // Craft Focus State
         let focusedRecipeName = localStorage.getItem('fish_tracker_focused_recipe') || null;
         if (focusedRecipeName && !recipes[focusedRecipeName]) {
             focusedRecipeName = null;
         }
         let showOnlyFocusedRecipeItems = false;
 
-        function populateDropdowns() {
-            const fishSelect = document.getElementById('fishSelectInput');
-            const ingSelect = document.getElementById('ingSelectInput');
+        function populateDatalists() {
+            const itemsDatalist = document.getElementById('itemsDatalist');
+            const ingredientsDatalist = document.getElementById('ingredientsDatalist');
 
-            let html = `<optgroup label="✨ Custom Item">
-                <option value="CUSTOM">-- Type Custom Item --</option>
-            </optgroup>`;
+            let optionsHtml = '';
+            const sortedNames = [...ALL_KNOWN_NAMES].sort((a, b) => a.localeCompare(b));
 
-            html += `<optgroup label="📦 Items">`;
-            ITEMS_LIST.forEach(item => {
-                html += `<option value="${item}">${item}</option>`;
+            sortedNames.forEach(name => {
+                const details = getItemDetails(name);
+                const type = getItemType(name, details.rarity);
+                const labelParts = [type];
+                if (details.rarity !== 'Other') labelParts.push(details.rarity);
+                if (details.biomes.length > 0) labelParts.push(details.biomes[0]);
+                optionsHtml += `<option value="${name}" label="${labelParts.join(' • ')}"></option>`;
             });
-            html += `</optgroup>`;
 
-            html += `<optgroup label="🪱 Baits">`;
-            BAITS_LIST.forEach(bait => {
-                html += `<option value="${bait}">${bait}</option>`;
-            });
-            html += `</optgroup>`;
-
-            html += `<optgroup label="🎣 Crafting Rewards & Gear">`;
-            GEAR_REWARDS.forEach(gear => {
-                html += `<option value="${gear}">${gear}</option>`;
-            });
-            html += `</optgroup>`;
-
-            for (const [biomeName, biomeData] of Object.entries(BIOMES_DATA)) {
-                html += `<optgroup label="🌊 ${biomeName} (Fish)">`;
-                let fishOnly = Object.values(biomeData.rarities).flat().filter(f => !ITEMS_LIST.includes(f));
-                let uniqueFish = [...new Set(fishOnly)];
-                uniqueFish.sort().forEach(fish => {
-                    html += `<option value="${fish}">${fish}</option>`;
-                });
-                html += `</optgroup>`;
-            }
-
-            fishSelect.innerHTML = html;
-            ingSelect.innerHTML = `<option value="Any Fish">Any Fish</option><option value="Money">Money</option>` + html;
+            itemsDatalist.innerHTML = optionsHtml;
+            ingredientsDatalist.innerHTML = `<option value="Money" label="Currency"></option><option value="Any Fish" label="Generic Fish"></option>` + optionsHtml;
         }
 
-        function handleFishSelectionChange(event) {
-            const val = event.target.value;
-            const customContainer = document.getElementById('customNameContainer');
-            if (val === 'CUSTOM') {
-                customContainer.classList.remove('hidden');
-                document.getElementById('customFishNameInput').focus();
-            } else {
-                customContainer.classList.add('hidden');
+        function clearField(inputId) {
+            const el = document.getElementById(inputId);
+            if (el) {
+                el.value = '';
+                el.focus();
             }
         }
 
@@ -570,18 +620,10 @@
 
         function handleFishSubmit(event) {
             event.preventDefault();
-            const selectEl = document.getElementById('fishSelectInput');
+            const nameInput = document.getElementById('fishNameInput');
             const qtyInput = document.getElementById('fishQtyInput');
             
-            let name = selectEl.value;
-            if (name === 'CUSTOM') {
-                const customInput = document.getElementById('customFishNameInput');
-                name = toTitleCase(customInput.value.trim());
-                customInput.value = '';
-                customInput.parentElement.classList.add('hidden');
-                selectEl.value = document.querySelector('optgroup option').value;
-            }
-
+            const name = resolveCanonicalName(nameInput.value);
             if (!name) return;
 
             const newQty = parseInt(qtyInput.value) || 0;
@@ -594,10 +636,11 @@
                 inventory[name] = { count: newQty, type: type, rarity: details.rarity, biomes: details.biomes };
             }
 
+            nameInput.value = '';
+            qtyInput.value = '1';
             inventorySearchQuery = '';
             document.getElementById('inventorySearchInput').value = '';
             document.getElementById('clearSearchBtn').classList.add('hidden');
-            qtyInput.value = '1';
             saveData();
 
             switchTab('tab-inventory');
@@ -645,7 +688,6 @@
 
         function quickFilterItem(keyword) {
             const input = document.getElementById('inventorySearchInput');
-            // Toggle off if clicking the same active quick filter
             if (inventorySearchQuery === keyword.toLowerCase()) {
                 clearSearch();
                 return;
@@ -687,14 +729,15 @@
         }
 
         function addIngredientToBuilder() {
-            const selectEl = document.getElementById('ingSelectInput');
+            const nameInput = document.getElementById('ingNameInput');
             const qtyInput = document.getElementById('ingQtyInput');
 
-            let name = selectEl.value;
-            if (name === 'CUSTOM') return;
+            const name = resolveCanonicalName(nameInput.value);
+            if (!name) return;
             const qty = parseInt(qtyInput.value) || 1;
 
             tempRecipeIngredients[name] = qty;
+            nameInput.value = '';
             qtyInput.value = '1';
             renderBuilderIngredients();
         }
@@ -716,7 +759,7 @@
             container.innerHTML = entries.map(([name, qty]) => `
                 <div class="flex justify-between items-center bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
                     <span class="text-slate-200">${name} <span class="text-purple-400 font-semibold">(Req: ${qty})</span></span>
-                    <button type="button" onclick="removeIngredientFromBuilder('${name}')" class="text-rose-400 hover:text-rose-300 font-bold px-1">✕</button>
+                    <button type="button" onclick="removeIngredientFromBuilder('${name.replace(/'/g, "\\'")}')" class="text-rose-400 hover:text-rose-300 font-bold px-1">✕</button>
                 </div>
             `).join('');
         }
@@ -780,6 +823,35 @@
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
 
+        function updateRarityCounters() {
+            const counts = {
+                "Legendary": 0,
+                "Rare": 0,
+                "Uncommon": 0,
+                "Common": 0,
+                "bait": 0,
+                "item": 0,
+                "gear": 0
+            };
+
+            for (const [_, data] of Object.entries(inventory)) {
+                if (data.type === 'Bait') {
+                    counts.bait += data.count;
+                } else if (data.type === 'Gear') {
+                    counts.gear += data.count;
+                } else if (data.type === 'Item') {
+                    counts.item += data.count;
+                } else if (counts[data.rarity] !== undefined) {
+                    counts[data.rarity] += data.count;
+                }
+            }
+
+            for (const [key, val] of Object.entries(counts)) {
+                const el = document.getElementById('count-' + key);
+                if (el) el.innerText = val.toLocaleString();
+            }
+        }
+
         function renderQuickFilters() {
             const container = document.getElementById('quickFilterContainer');
 
@@ -790,21 +862,22 @@
                     .reduce((acc, [_, data]) => acc + data.count, 0);
 
                 let pillsHtml = `
-                    <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-semibold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-                                🎯 Focused Craft: <strong class="text-white">${focusedRecipeName}</strong>
-                            </span>
-                            <button onclick="toggleShowOnlyFocusedItems()" class="text-[11px] px-2.5 py-1 rounded-lg font-medium transition border ${showOnlyFocusedRecipeItems ? 'bg-emerald-600 text-white border-emerald-500 shadow' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'}">
-                                ${showOnlyFocusedRecipeItems ? '✓ Showing All Needed' : '👁️ Show All Needed'}
+                    <div class="bg-slate-950/80 border border-indigo-500/30 p-3 rounded-xl space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                                    🎯 Focused Craft: <strong class="text-white">${focusedRecipeName}</strong>
+                                </span>
+                                <button onclick="toggleShowOnlyFocusedItems()" class="text-[11px] px-2.5 py-1 rounded-lg font-medium transition border ${showOnlyFocusedRecipeItems ? 'bg-emerald-600 text-white border-emerald-500 shadow' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'}">
+                                    ${showOnlyFocusedRecipeItems ? '✓ Showing All Needed' : '👁️ Show All Needed'}
+                                </button>
+                            </div>
+                            <button onclick="clearFocusedRecipe()" class="text-[11px] text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1 rounded-lg transition font-medium">
+                                ✕ Clear Focus
                             </button>
                         </div>
-                        <button onclick="clearFocusedRecipe()" class="text-[11px] text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1 rounded-lg transition font-medium">
-                            ✕ Clear Focus
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-1.5 w-full">
-                        <span class="text-[11px] text-slate-400 font-medium mr-1">Needed:</span>
+                        <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-800">
+                            <span class="text-[11px] text-slate-400 font-medium mr-1">Required Ingredients:</span>
                 `;
 
                 for (const [ing, reqQty] of Object.entries(recipe.ingredients)) {
@@ -840,24 +913,16 @@
                     }
                 }
 
-                pillsHtml += `</div>`;
+                pillsHtml += `</div></div>`;
                 container.innerHTML = pillsHtml;
             } else {
-                // Default popular quick filters when no craft is focused
-                const defaultPills = ['Coral', 'Seaweed', 'Pearl Trinket', 'Anchor', 'Gems', 'Ticket Scrap', 'Submarine Scrap'];
-                container.innerHTML = `
-                    <span class="text-[11px] text-slate-400 font-medium mr-1">Quick Item Filter:</span>
-                    ${defaultPills.map(item => {
-                        const isActive = inventorySearchQuery === item.toLowerCase();
-                        return `<button onclick="quickFilterItem('${item}')" class="text-[11px] ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'} px-2.5 py-1 rounded-lg transition">${item}</button>`;
-                    }).join('')}
-                    <button onclick="switchTab('tab-crafts')" class="ml-auto text-[11px] text-indigo-400 hover:text-indigo-300 underline">🎯 Focus a Craft Recipe →</button>
-                `;
+                container.innerHTML = '';
             }
         }
 
         function renderInventory() {
             document.getElementById('headerMoneyDisplay').innerText = `$${playerMoney.toLocaleString()}`;
+            updateRarityCounters();
             renderQuickFilters();
 
             const container = document.getElementById('inventoryList');
@@ -948,7 +1013,6 @@
                 const subtext = data.type === 'Bait' ? '🪱 Fishing Bait' : `🌊 ${data.biomes && data.biomes.length > 0 ? data.biomes.join(', ') : 'Various / Custom'}`;
                 const highlightedName = highlightMatch(name, inventorySearchQuery);
 
-                // Show focused craft progress badge on the card if applicable
                 let craftReqBadge = '';
                 if (focusedRecipeName && recipes[focusedRecipeName]) {
                     const reqQty = recipes[focusedRecipeName].ingredients[name];
@@ -971,9 +1035,9 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', 1)" class="w-7 h-7 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center transition">+</button>
-                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', -1)" class="w-7 h-7 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center transition">-</button>
-                            <button onclick="removeFishItem('${name.replace(/'/g, "\\'")}')" class="w-7 h-7 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs flex items-center justify-center ml-1 transition" title="Delete">🗑️</button>
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', 1)" class="w-8 h-8 sm:w-7 sm:h-7 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center transition">+</button>
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', -1)" class="w-8 h-8 sm:w-7 sm:h-7 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center transition">-</button>
+                            <button onclick="removeFishItem('${name.replace(/'/g, "\\'")}')" class="w-8 h-8 sm:w-7 sm:h-7 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs flex items-center justify-center ml-1 transition" title="Delete">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -1118,7 +1182,7 @@
             renderCrafting();
         }
 
-        populateDropdowns();
+        populateDatalists();
         renderApp();
     </script>
 </body>

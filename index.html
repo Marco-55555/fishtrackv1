@@ -197,14 +197,12 @@
                 <div class="flex flex-wrap gap-2">
                     <button onclick="setFilter('all')" id="filter-btn-all" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-indigo-600 text-white transition shadow">All Items</button>
                     <button onclick="setFilter('fish')" id="filter-btn-fish" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🐟 Fish Only</button>
-                    <button onclick="setFilter('bling')" id="filter-btn-bling" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-amber-300 hover:bg-slate-800 transition">💎 Blingified Only</button>
                     <button onclick="setFilter('bait')" id="filter-btn-bait" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🪱 Bait Only</button>
                     <button onclick="setFilter('item')" id="filter-btn-item" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">📦 Items</button>
                     <button onclick="setFilter('gear')" id="filter-btn-gear" class="filter-btn text-xs px-3.5 py-1.5 rounded-xl font-medium bg-slate-950 text-slate-300 hover:bg-slate-800 transition">🎣 Gear & Bling</button>
                 </div>
 
                 <div id="quickFilterContainer"></div>
-                <!-- Fixed Scrollable Inventory List Container preventing overflow past 100+ items -->
                 <div id="inventoryList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2 max-h-[55vh] overflow-y-auto custom-scrollbar pr-1"></div>
             </div>
         </div>
@@ -423,7 +421,6 @@
             inventory[name] = { count: count, type: type, rarity: details.rarity, biomes: details.biomes };
         }
 
-        // Add free default gear if not present
         if (!inventory["Delta Wayfinder"]) {
             inventory["Delta Wayfinder"] = { count: 1, type: "Gear", rarity: "Other", biomes: ["The Drowned Delta"] };
         }
@@ -441,9 +438,7 @@
         let inventorySortBy = 'name-asc';
         let inventoryFilter = 'all';
 
-        // Multi-focus support (stored as array of recipe names)
         let focusedRecipeNames = JSON.parse(localStorage.getItem('fish_tracker_focused_recipes')) || [];
-        // Migration from old single focus key if present
         const oldSingleFocus = localStorage.getItem('fish_tracker_focused_recipe');
         if (oldSingleFocus && focusedRecipeNames.length === 0) {
             focusedRecipeNames = [oldSingleFocus];
@@ -529,12 +524,10 @@
             saveData();
         }
 
-        // Craft / Done button: removes required items from inventory and adds output reward
         function craftRecipeDone(recipeName) {
             const recipe = recipes[recipeName];
             if (!recipe) return;
 
-            // 1. Validate if user has enough ingredients
             const totalFish = Object.values(inventory).filter(d => d.type === 'Fish').reduce((a, b) => a + b.count, 0);
             const totalBling = getTotalBlingifiedCount();
             const currentMoneyVal = calculateTotalFishValue();
@@ -556,18 +549,14 @@
                 return;
             }
 
-            // 2. Deduct ingredients
             for (const [ing, reqQty] of Object.entries(recipe.ingredients)) {
                 if (ing === 'Money') {
-                    // If money is tied to fish sell value, reduce override or sell fish to cover
                     if (manualMoneyOverride !== null) {
                         manualMoneyOverride = Math.max(0, manualMoneyOverride - reqQty);
                     } else {
-                        // Deduct from manual override starting from current computed value
                         manualMoneyOverride = Math.max(0, currentMoneyVal - reqQty);
                     }
                 } else if (ing.toLowerCase() === 'any fish') {
-                    // Deduct from generic fish in inventory (starting with common/lower value)
                     let remainingToDeduct = reqQty;
                     for (const [fName, fData] of Object.entries(inventory)) {
                         if (fData.type === 'Fish' && remainingToDeduct > 0) {
@@ -595,9 +584,7 @@
                 }
             }
 
-            // 3. Add output reward to inventory
-            const outputName = recipe.output.replace(/\s*x\d+$/, '').trim(); // e.g. "Blingified Turtle x1" -> "Blingified Turtle"
-            // extract quantity if specified (e.g. x1)
+            const outputName = recipe.output.replace(/\s*x\d+$/, '').trim();
             let outputQty = 1;
             const matchQty = recipe.output.match(/x(\d+)$/);
             if (matchQty) outputQty = parseInt(matchQty[1]);
@@ -882,7 +869,6 @@
                         <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800">
                 `;
 
-                // Aggregate all ingredients needed across all focused recipes
                 const aggregatedIngredients = {};
                 const totalFishCount = Object.values(inventory).filter(d => d.type === 'Fish').reduce((a, b) => a + b.count, 0);
                 const totalBlingCount = getTotalBlingifiedCount();
@@ -922,7 +908,6 @@
             let entries = Object.entries(inventory);
 
             if (inventoryFilter === 'fish') entries = entries.filter(([_, d]) => d.type === 'Fish');
-            else if (inventoryFilter === 'bling') entries = entries.filter(([name, _]) => name.toLowerCase().startsWith('blingified'));
             else if (inventoryFilter === 'bait') entries = entries.filter(([_, d]) => d.type === 'Bait');
             else if (inventoryFilter === 'item') entries = entries.filter(([_, d]) => d.type === 'Item');
             else if (inventoryFilter === 'gear') entries = entries.filter(([_, d]) => d.type === 'Gear');

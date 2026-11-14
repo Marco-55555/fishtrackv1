@@ -203,6 +203,7 @@
                 </div>
 
                 <div id="quickFilterContainer"></div>
+                <!-- Inventory List with strict flex-1 and min-w-0 to prevent text overflow outside buttons -->
                 <div id="inventoryList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2 max-h-[55vh] overflow-y-auto custom-scrollbar pr-1"></div>
             </div>
         </div>
@@ -210,10 +211,13 @@
         <!-- TAB 3: CRAFTING -->
         <div id="tab-crafts" class="tab-content space-y-6 hidden">
             <div class="bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-800 space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h2 class="text-lg font-semibold flex items-center gap-2 text-emerald-400">📦 Crafting Requirements & Status</h2>
-                        <p class="text-xs text-slate-400">Click <span class="text-indigo-300 font-medium">🎯 Focus</span> (multi-select), <span class="text-emerald-300 font-medium">✅ Done</span> to craft, or <span class="text-purple-300 font-medium">✏️ Edit</span> to vary costs.</p>
+                        <p class="text-xs text-slate-400">Click <span class="text-indigo-300 font-medium">🎯 Focus</span>, <span class="text-emerald-300 font-medium">✅ Done</span> to craft, <span class="text-purple-300 font-medium">✏️ Edit</span> to vary costs, or <span class="text-slate-300 font-medium">👁️ Hide</span>.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleShowHiddenRecipes()" id="showHiddenToggleBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 transition font-medium">Show Hidden (0)</button>
                     </div>
                 </div>
                 <div id="craftingList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
@@ -338,7 +342,7 @@
                 output: "Blingified Lobster x1"
             },
             "Master Baiter": {
-                ingredients: { "Blingified Fish": 5 },
+                ingredients: { "Blingified Turtle": 1, "Blingified Dolphin": 1, "Blingified Stingray": 1, "Blingified Octopus": 1, "Blingified Lobster": 1 },
                 output: "Master Baiter Cosmetic Role"
             },
             "Fishing Gear Crate": { ingredients: {"Coral": 15, "Seaweed": 15, "Rusty Anchor": 10, "Clay Jar": 5, "Cryptic Stone Tablet": 5}, output: "Fishing Gear Crate x1" },
@@ -432,6 +436,9 @@
         let savedRecipes = JSON.parse(localStorage.getItem('fish_tracker_recipes')) || {};
         let recipes = { ...DEFAULT_RECIPES, ...savedRecipes };
         
+        let hiddenRecipes = JSON.parse(localStorage.getItem('fish_tracker_hidden_recipes')) || [];
+        let showHiddenRecipesView = false;
+
         let tempRecipeIngredients = {};
         let editingRecipeOriginalName = null;
         let inventorySearchQuery = '';
@@ -506,6 +513,7 @@
                 localStorage.removeItem('fish_tracker_money_override');
             }
             localStorage.setItem('fish_tracker_focused_recipes', JSON.stringify(focusedRecipeNames));
+            localStorage.setItem('fish_tracker_hidden_recipes', JSON.stringify(hiddenRecipes));
             renderApp();
         }
 
@@ -522,6 +530,24 @@
         function clearAllFocusedRecipes() {
             focusedRecipeNames = [];
             saveData();
+        }
+
+        function toggleHideRecipe(recipeName) {
+            const idx = hiddenRecipes.indexOf(recipeName);
+            if (idx > -1) {
+                hiddenRecipes.splice(idx, 1);
+            } else {
+                hiddenRecipes.push(recipeName);
+                // Also remove from focus if hidden
+                const fIdx = focusedRecipeNames.indexOf(recipeName);
+                if (fIdx > -1) focusedRecipeNames.splice(fIdx, 1);
+            }
+            saveData();
+        }
+
+        function toggleShowHiddenRecipes() {
+            showHiddenRecipesView = !showHiddenRecipesView;
+            renderCrafting();
         }
 
         function craftRecipeDone(recipeName) {
@@ -615,7 +641,8 @@
             const dataToExport = {
                 inventory: inventory,
                 recipes: recipes,
-                manualMoneyOverride: manualMoneyOverride
+                manualMoneyOverride: manualMoneyOverride,
+                hiddenRecipes: hiddenRecipes
             };
             const jsonString = JSON.stringify(dataToExport, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
@@ -662,6 +689,7 @@
                         inventory = parsed.inventory;
                         recipes = { ...DEFAULT_RECIPES, ...parsed.recipes };
                         manualMoneyOverride = parsed.manualMoneyOverride !== undefined ? parsed.manualMoneyOverride : null;
+                        hiddenRecipes = parsed.hiddenRecipes || [];
                         saveData();
                         alert("✅ Successfully imported data!");
                     } else {
@@ -809,6 +837,8 @@
                 delete recipes[editingRecipeOriginalName];
                 const idx = focusedRecipeNames.indexOf(editingRecipeOriginalName);
                 if (idx > -1) focusedRecipeNames[idx] = newName;
+                const hIdx = hiddenRecipes.indexOf(editingRecipeOriginalName);
+                if (hIdx > -1) hiddenRecipes[hIdx] = newName;
             }
 
             recipes[newName] = { ingredients: { ...tempRecipeIngredients }, output: outputInput.value.trim() };
@@ -826,6 +856,7 @@
                 recipes = {...DEFAULT_RECIPES};
                 manualMoneyOverride = null;
                 focusedRecipeNames = [];
+                hiddenRecipes = [];
                 localStorage.clear();
                 renderApp();
             }
@@ -936,26 +967,27 @@
                 return;
             }
 
+            // Fixed inventory card layout with min-w-0 and truncation to prevent text overflow outside buttons
             container.innerHTML = entries.map(([name, data]) => {
                 const unitPrice = data.type === 'Fish' ? getFishSellPrice(name, data.rarity) : 0;
                 const totalItemVal = unitPrice * data.count;
                 const isBling = name.toLowerCase().startsWith('blingified');
                 return `
-                    <div class="flex items-center justify-between bg-slate-950/60 border ${isBling ? 'border-amber-400/40' : 'border-slate-800'} p-3.5 rounded-2xl">
-                        <div>
-                            <div class="font-medium ${isBling ? 'text-amber-300' : 'text-slate-200'} text-sm flex items-center gap-1.5">
-                                ${isBling ? '💎' : ''} ${name}
+                    <div class="flex items-center justify-between bg-slate-950/60 border ${isBling ? 'border-amber-400/40' : 'border-slate-800'} p-3.5 rounded-2xl gap-2 overflow-hidden">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-medium ${isBling ? 'text-amber-300' : 'text-slate-200'} text-sm truncate flex items-center gap-1.5" title="${name}">
+                                ${isBling ? '💎' : ''} <span class="truncate">${name}</span>
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">${isBling ? '✨ Blingified Collection' : '🌊 ' + (data.biomes.join(', ') || 'Various')}</div>
-                            <div class="text-xs text-indigo-300 font-semibold mt-1 flex items-center gap-2">
+                            <div class="text-[11px] text-slate-400 mt-0.5 truncate">${isBling ? '✨ Blingified Collection' : '🌊 ' + (data.biomes.join(', ') || 'Various')}</div>
+                            <div class="text-xs text-indigo-300 font-semibold mt-1 flex items-center gap-2 truncate">
                                 <span>Qty: ${data.count}</span>
-                                ${data.type === 'Fish' ? `<span class="text-amber-300 font-normal">($${totalItemVal.toLocaleString()} total)</span>` : ''}
+                                ${data.type === 'Fish' ? `<span class="text-amber-300 font-normal truncate">($${totalItemVal.toLocaleString()} total)</span>` : ''}
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', 1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300">+</button>
-                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', -1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300">-</button>
-                            <button onclick="removeFishItem('${name.replace(/'/g, "\\'")}')" class="w-8 h-8 bg-rose-500/10 text-rose-400 rounded-xl">🗑️</button>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', 1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300 flex items-center justify-center">+</button>
+                            <button onclick="adjustQuantity('${name.replace(/'/g, "\\'")}', -1)" class="w-8 h-8 bg-slate-900 rounded-xl font-bold text-slate-300 flex items-center justify-center">-</button>
+                            <button onclick="removeFishItem('${name.replace(/'/g, "\\'")}')" class="w-8 h-8 bg-rose-500/10 text-rose-400 rounded-xl flex items-center justify-center">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -967,10 +999,26 @@
             const totalFish = Object.values(inventory).filter(d => d.type === 'Fish').reduce((a, b) => a + b.count, 0);
             const totalBling = getTotalBlingifiedCount();
             const totalVal = calculateTotalFishValue();
+
+            const toggleBtn = document.getElementById('showHiddenToggleBtn');
+            toggleBtn.innerText = `Show Hidden (${hiddenRecipes.length})`;
+
+            let recipeEntries = Object.entries(recipes);
+            if (showHiddenRecipesView) {
+                recipeEntries = recipeEntries.filter(([name]) => hiddenRecipes.includes(name));
+            } else {
+                recipeEntries = recipeEntries.filter(([name]) => !hiddenRecipes.includes(name));
+            }
             
-            container.innerHTML = Object.entries(recipes).map(([recipeName, details]) => {
+            if (recipeEntries.length === 0) {
+                container.innerHTML = `<p class="text-sm text-slate-500 text-center py-8 col-span-full">${showHiddenRecipesView ? 'No hidden recipes.' : 'No active recipes to display.'}</p>`;
+                return;
+            }
+
+            container.innerHTML = recipeEntries.map(([recipeName, details]) => {
                 let canCraft = Infinity;
                 const isFocused = focusedRecipeNames.includes(recipeName);
+                const isHidden = hiddenRecipes.includes(recipeName);
                 const isMasterBaiter = recipeName === 'Master Baiter';
                 let ingHtml = '';
 
@@ -998,9 +1046,10 @@
                                 </h3>
                                 <p class="text-xs text-indigo-300">Yields: ${details.output}</p>
                             </div>
-                            <div class="flex items-center gap-1.5 shrink-0">
+                            <div class="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                                 <button onclick="craftRecipeDone('${recipeName.replace(/'/g, "\\'")}')" class="text-xs px-2.5 py-1.5 rounded-full font-semibold transition ${isReady ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}" title="Craft / Done">✅ Done</button>
                                 <button onclick="editRecipe('${recipeName.replace(/'/g, "\\'")}')" class="text-xs px-2.5 py-1.5 rounded-full font-semibold bg-purple-500/25 hover:bg-purple-500/35 text-purple-300" title="Edit Recipe">✏️ Edit</button>
+                                <button onclick="toggleHideRecipe('${recipeName.replace(/'/g, "\\'")}')" class="text-xs px-2.5 py-1.5 rounded-full font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300" title="${isHidden ? 'Unhide Recipe' : 'Hide Recipe'}">${isHidden ? '👁️ Show' : '👁️‍🗨️ Hide'}</button>
                                 <button onclick="toggleFocusRecipe('${recipeName.replace(/'/g, "\\'")}')" class="text-xs px-3 py-1.5 rounded-full font-semibold ${isFocused ? 'bg-indigo-600 text-white' : 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300'}">🎯 ${isFocused ? 'Focused' : 'Focus'}</button>
                             </div>
                         </div>
